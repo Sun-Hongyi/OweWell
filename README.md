@@ -20,6 +20,21 @@ Minimising the number of payments is NP-hard. Greedy can use more payments than 
 For example, with balances of +$100, +$80, −$80, −$70 and −$30, greedy needs 4 payments, while
 the optimal algorithm finds 3 by spotting that {+$80, −$80} and {+$100, −$70, −$30} each settle on their own.
 
+## Benchmarks
+2,000 random groups per size, with whole-dollar balances between −$100 and +$100:
+
+| People | Greedy (avg payments) | Optimal (avg payments) | Payments saved | Optimal better in | Optimal time per group |
+|---|---|---|---|---|---|
+| 4  | 2.97  | 2.97 | 0.0% | 0.0%  | 0.001 ms |
+| 6  | 4.90  | 4.87 | 0.5% | 2.3%  | 0.004 ms |
+| 8  | 6.77  | 6.60 | 2.5% | 17.0% | 0.007 ms |
+| 10 | 8.60  | 8.11 | 5.7% | 47.3% | 0.026 ms |
+| 12 | 10.40 | 9.61 | 7.6% | 66.5% | 0.035 ms |
+
+Greedy is near-optimal for small groups, but the gap grows with group size. Optimal stays well under a millisecond.
+
+To reproduce, run `SettlementBenchmark` in `src/test/java/owewell/domain/`.
+
 ## Tech
 Java 25 · Gradle · JUnit 5 · GitHub Actions CI
 
@@ -31,7 +46,7 @@ Java 25 · Gradle · JUnit 5 · GitHub Actions CI
 ## Roadmap
 - [x] Core domain: money, splits, expenses, balances
 - [x] Greedy and optimal settlement algorithms
-- [ ] Benchmarks comparing greedy and optimal
+- [x] Benchmarks comparing greedy and optimal
 - [ ] Event-sourced ledger for expense history
 - [ ] Spring Boot REST API
 - [ ] PostgreSQL persistence
