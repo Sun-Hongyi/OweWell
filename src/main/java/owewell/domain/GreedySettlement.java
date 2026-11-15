@@ -5,8 +5,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class GreedySettlement {
+public class GreedySettlement implements SettlementAlgorithm {
 
+    @Override
     public List<Payment> settle(Map<UserId, Money> balances) {
         List<Payment> payments = new ArrayList<>();
         Map<UserId, Money> remaining = new LinkedHashMap<>(balances);

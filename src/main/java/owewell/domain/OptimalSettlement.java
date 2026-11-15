@@ -5,12 +5,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class OptimalSettlement {
+public class OptimalSettlement implements SettlementAlgorithm {
 
     public static final int MAX_PEOPLE = 20;
 
     private final GreedySettlement greedy = new GreedySettlement();
 
+    @Override
     public List<Payment> settle(Map<UserId, Money> balances) {
         // 1. Only people who aren't already even need to be settled
         List<UserId> people = new ArrayList<>();
