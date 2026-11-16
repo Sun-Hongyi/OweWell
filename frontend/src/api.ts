@@ -30,3 +30,14 @@ export async function getJson<T>(url: string): Promise<T> {
   }
   return res.json()
 }
+
+export async function deleteRequest(url: string): Promise<void> {
+  const res = await fetch(url, {
+    method: 'DELETE',
+    headers: { 'X-XSRF-TOKEN': csrfToken() },
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => null)
+    throw new Error(error?.error ?? `Request failed (${res.status})`)
+  }
+}

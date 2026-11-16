@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
-import { getJson } from './api'
+import { deleteRequest, getJson } from './api'
 import { formatMoney } from './money'
 import { InviteButton } from './InviteButton'
 import { AddExpenseForm } from './AddExpenseForm'
@@ -38,7 +38,7 @@ export function GroupPage() {
         setBalances(balanceList)
       })
       .catch(err => setError(err.message))
-  }, [groupId, refreshKey])   // reload when the group changes OR after adding an expense
+  }, [groupId, refreshKey])   // reload when the group changes OR after a change
 
   if (error) return <p>Couldn't load this group: {error}</p>
   if (!group) return <p>Loading…</p>
@@ -46,6 +46,16 @@ export function GroupPage() {
   // Turn a user ID into their name, using the member list
   const nameOf = (userId: string) =>
     group.members.find(member => member.id === userId)?.name ?? userId
+
+  async function deleteExpense(expenseId: string) {
+    if (!window.confirm('Delete this expense?')) return
+    try {
+      await deleteRequest(`/groups/${groupId}/expenses/${expenseId}`)
+      setRefreshKey(k => k + 1)   // reload balances and expenses
+    } catch (err) {
+      alert((err as Error).message)
+    }
+  }
 
   return (
     <>
@@ -93,7 +103,9 @@ export function GroupPage() {
             <li key={expense.id} style={expense.voided ? { textDecoration: 'line-through', opacity: 0.6 } : {}}>
               {expense.description}: {formatMoney(expense.totalCents, expense.currency)}, paid by{' '}
               {nameOf(expense.paidBy)}
-              {expense.voided && ' (deleted)'}
+              {expense.voided
+                ? ' (deleted)'
+                : <>{' '}<button onClick={() => deleteExpense(expense.id)}>Delete</button></>}
             </li>
           ))}
         </ul>
