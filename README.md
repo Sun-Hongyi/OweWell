@@ -54,7 +54,7 @@ Java 25 · Gradle · JUnit 5 · GitHub Actions CI
 - [x] Greedy and optimal settlement algorithms
 - [x] Benchmarks comparing greedy and optimal
 - [x] Event-sourced ledger for expense history
-- [ ] Groups and application services
+- [x] Groups and application services
 - [ ] Spring Boot REST API
 - [ ] PostgreSQL persistence
 - [ ] Google sign-in and invite links
