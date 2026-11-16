@@ -23,6 +23,10 @@ public record Money(long cents, String currency) {
         return this.cents == 0;
     }
 
+    public Money negate() {
+        return new Money(-cents, currency);
+    }
+
     public List<Money> allocate(int parts) {
         if (parts <= 0) {
             throw new IllegalArgumentException("parts must be positive");
@@ -30,7 +34,7 @@ public record Money(long cents, String currency) {
         if (cents < 0) {
             // Split the positive amount, then flip each share back to negative
             return new Money(-cents, currency).allocate(parts).stream()
-                .map(share -> new Money(-share.cents, currency))
+                .map(Money::negate)
                 .toList();
         }
         long base = cents / parts;
@@ -61,7 +65,7 @@ public record Money(long cents, String currency) {
         // Same trick as allocate(): split the positive amount, then flip back
         if (cents < 0) {
             return new Money(-cents, currency).allocateByRatios(ratios).stream()
-                .map(share -> new Money(-share.cents, currency))
+                .map(Money::negate)
                 .toList();
         }
 

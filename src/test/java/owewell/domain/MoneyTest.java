@@ -108,4 +108,10 @@ class MoneyTest {
         assertThrows(IllegalArgumentException.class,
             () -> new Money(1000, "AUD").allocateByRatios(List.of(0, 0)));
     }
+
+    @Test
+    void negateFlipsTheSign() {
+        assertEquals(new Money(-500, "AUD"), new Money(500, "AUD").negate());
+        assertEquals(new Money(500, "AUD"), new Money(-500, "AUD").negate());
+    }
 }

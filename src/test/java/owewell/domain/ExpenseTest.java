@@ -68,4 +68,17 @@ class ExpenseTest {
         assertEquals(new Money(2000, "AUD"), taxi.shares().get(alex));
         assertEquals(new Money(3000, "AUD"), taxi.shares().get(sam));
     }
+
+    @Test
+    void createsExpenseWithSharesSplit() {
+        Map<UserId, Integer> shares = new LinkedHashMap<>();
+        shares.put(alex, 2);
+        shares.put(sam, 1);
+
+        Expense drinks = Expense.withSplit(
+            "Drinks", alex, new Money(3000, "AUD"), new SharesSplit(shares));
+
+        assertEquals(new Money(2000, "AUD"), drinks.shares().get(alex));
+        assertEquals(new Money(1000, "AUD"), drinks.shares().get(sam));
+    }
 }
