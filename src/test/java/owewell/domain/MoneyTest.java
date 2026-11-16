@@ -64,4 +64,48 @@ class MoneyTest {
         assertTrue(new Money(0, "AUD").isZero());
         assertFalse(new Money(1, "AUD").isZero());
     }
+
+    @Test
+    void allocatesByRatiosThreeToOne() {
+        assertEquals(List.of(new Money(7500, "AUD"), new Money(2500, "AUD")),
+            new Money(10000, "AUD").allocateByRatios(List.of(3, 1)));
+    }
+
+    @Test
+    void equalRatiosMatchEqualAllocation() {
+        assertEquals(new Money(1000, "AUD").allocate(3),
+            new Money(1000, "AUD").allocateByRatios(List.of(1, 1, 1)));
+    }
+
+    @Test
+    void leftoverCentGoesToFirstPerson() {
+        assertEquals(List.of(new Money(34, "AUD"), new Money(66, "AUD")),
+            new Money(100, "AUD").allocateByRatios(List.of(1, 2)));
+    }
+
+    @Test
+    void zeroRatioPersonNeverGetsALeftoverCent() {
+        assertEquals(List.of(new Money(0, "AUD"), new Money(51, "AUD"), new Money(50, "AUD")),
+            new Money(101, "AUD").allocateByRatios(List.of(0, 1, 1)));
+    }
+
+    @Test
+    void allocatesNegativeAmountsByRatiosWithoutLosingACent() {
+        assertEquals(List.of(new Money(-34, "AUD"), new Money(-66, "AUD")),
+            new Money(-100, "AUD").allocateByRatios(List.of(1, 2)));
+    }
+
+    @Test
+    void rejectsNegativeRatios() {
+        assertThrows(IllegalArgumentException.class,
+            () -> new Money(1000, "AUD").allocateByRatios(List.of(3, -1)));
+    }
+
+    @Test
+    void rejectsEmptyOrAllZeroRatios() {
+        assertThrows(IllegalArgumentException.class,
+            () -> new Money(1000, "AUD").allocateByRatios(List.of()));
+        assertThrows(IllegalArgumentException.class,
+            () -> new Money(1000, "AUD").allocateByRatios(List.of(0, 0)));
+    }
 }

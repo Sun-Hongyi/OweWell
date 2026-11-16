@@ -42,6 +42,53 @@ public record Money(long cents, String currency) {
         return result;
     }
 
+    public List<Money> allocateByRatios(List<Integer> ratios) {
+        if (ratios == null || ratios.isEmpty()) {
+            throw new IllegalArgumentException("ratios must not be null or empty");
+        }
+
+        long totalRatio = 0;
+        for (int ratio : ratios) {
+            if (ratio < 0) {
+                throw new IllegalArgumentException("ratios cannot be negative");
+            }
+            totalRatio += ratio;
+        }
+        if (totalRatio == 0) {
+            throw new IllegalArgumentException("ratios cannot all be zero");
+        }
+
+        // Same trick as allocate(): split the positive amount, then flip back
+        if (cents < 0) {
+            return new Money(-cents, currency).allocateByRatios(ratios).stream()
+                .map(share -> new Money(-share.cents, currency))
+                .toList();
+        }
+
+        // 1. Give everyone their rounded-down share
+        long[] shareCents = new long[ratios.size()];
+        long allocated = 0;
+        for (int i = 0; i < ratios.size(); i++) {
+            shareCents[i] = Math.multiplyExact(cents, (long) ratios.get(i)) / totalRatio;
+            allocated += shareCents[i];
+        }
+
+        // 2. Hand out the leftover cents one each, skipping anyone with a ratio of 0
+        long leftover = cents - allocated;
+        for (int i = 0; i < ratios.size() && leftover > 0; i++) {
+            if (ratios.get(i) > 0) {
+                shareCents[i]++;
+                leftover--;
+            }
+        }
+
+        List<Money> result = new ArrayList<>();
+        for (long c : shareCents) {
+            result.add(new Money(c, currency));
+        }
+        return result;
+    }
+
     private void requireSameCurrency(Money other) {
         if (!currency.equals(other.currency)) {
             throw new IllegalArgumentException(
