@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { GroupList } from './GroupList'
 
 type Me = { id: string; name: string; email: string }
 
@@ -31,6 +32,8 @@ function App() {
     <main>
       <h1>OweWell</h1>
       <p>Signed in as {me.name} ({me.email})</p>
+      <h2>Your groups</h2>
+      <GroupList />
     </main>
   )
 }
