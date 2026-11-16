@@ -3,6 +3,7 @@ import { BrowserRouter, Link, Route, Routes } from 'react-router'
 import { HomePage } from './HomePage'
 import { GroupPage } from './GroupPage'
 import { JoinPage } from './JoinPage'
+import { csrfToken } from './api'
 
 type Me = { id: string; name: string; email: string }
 
@@ -26,6 +27,14 @@ function App() {
       .finally(() => setLoading(false))
   }, [])
 
+  async function signOut() {
+    await fetch('/logout', {
+      method: 'POST',
+      headers: { 'X-XSRF-TOKEN': csrfToken() },
+    })
+    window.location.href = '/'   // reload, which now shows "Sign in"
+  }
+
   if (loading) {
     return <p>Loading…</p>
   }
@@ -48,7 +57,10 @@ function App() {
     <BrowserRouter>
       <main>
         <h1><Link to="/">OweWell</Link></h1>
-        <p>Signed in as {me.name} ({me.email})</p>
+        <p>
+          Signed in as {me.name} ({me.email}){' '}
+          <button onClick={signOut}>Sign out</button>
+        </p>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/group/:groupId" element={<GroupPage />} />

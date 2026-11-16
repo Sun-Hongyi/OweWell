@@ -1,5 +1,5 @@
 // Reads the CSRF token Spring put in the XSRF-TOKEN cookie
-function csrfToken(): string {
+export function csrfToken(): string {
   const match = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]*)/)
   return match ? decodeURIComponent(match[1]) : ''
 }
@@ -31,6 +31,7 @@ export async function getJson<T>(url: string): Promise<T> {
   return res.json()
 }
 
+// Sends a DELETE request with the CSRF token
 export async function deleteRequest(url: string): Promise<void> {
   const res = await fetch(url, {
     method: 'DELETE',
@@ -38,6 +39,6 @@ export async function deleteRequest(url: string): Promise<void> {
   })
   if (!res.ok) {
     const error = await res.json().catch(() => null)
-    throw new Error(error?.error ?? `Request failed (${res.status})`)
+    throw new Error(error?.error ?? `Request failed with status ${res.status}`)
   }
 }
