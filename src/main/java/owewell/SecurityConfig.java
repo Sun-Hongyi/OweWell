@@ -20,7 +20,12 @@ public class SecurityConfig {
                                                    AppOidcUserService appOidcUserService,
                                                    @Value("${app.frontend-url}") String frontendUrl) throws Exception {
         http
-            .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+            .authorizeHttpRequests(auth -> auth
+                // The React page files load for everyone, so you can see the "Sign in" button
+                .requestMatchers("/", "/index.html", "/assets/**", "/*.svg", "/*.ico",
+                                 "/group/*", "/join/*").permitAll()
+                // Everything else (your data) needs sign-in
+                .anyRequest().authenticated())
             .oauth2Login(login -> login
                 .userInfoEndpoint(userInfo -> userInfo.oidcUserService(appOidcUserService))
                 .defaultSuccessUrl(frontendUrl + "/", true))
