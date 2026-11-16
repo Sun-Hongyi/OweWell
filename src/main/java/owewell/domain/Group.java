@@ -12,9 +12,13 @@ public class Group {
     private final GroupId id;
     private final String name;
     private final Set<UserId> members;
-    private final Ledger ledger = new Ledger();
+    private final Ledger ledger;
 
     public Group(GroupId id, String name, Set<UserId> members) {
+        this(id, name, members, new Ledger());
+    }
+
+    private Group(GroupId id, String name, Set<UserId> members, Ledger ledger) {
         this.id = Objects.requireNonNull(id, "id is required");
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Group name cannot be blank");
@@ -24,6 +28,12 @@ public class Group {
         }
         this.name = name;
         this.members = new LinkedHashSet<>(members);
+        this.ledger = ledger;
+    }
+
+    public static Group restore(GroupId id, String name, Set<UserId> members,
+                                List<LedgerEvent> history) {
+        return new Group(id, name, members, Ledger.fromEvents(history));
     }
 
     public GroupId id() {

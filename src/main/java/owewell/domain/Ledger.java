@@ -56,4 +56,15 @@ public class Ledger {
         }
         return active;
     }
+
+    public static Ledger fromEvents(List<LedgerEvent> history) {
+        Ledger ledger = new Ledger();
+        for (LedgerEvent event : history) {
+            ledger.events.add(event);
+            if (event instanceof LedgerEvent.ExpenseAdded) {
+                ledger.nextExpenseNumber++;
+            }
+        }
+        return ledger;
+    }
 }

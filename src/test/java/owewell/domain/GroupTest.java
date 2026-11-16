@@ -109,4 +109,16 @@ class GroupTest {
             assertTrue(balance.isZero());
         }
     }
+
+    @Test
+    void restoredGroupHasTheSameBalancesAndContinuesIds() {
+        Group original = baliTrip();
+        original.addExpense(Expense.splitEqually("Dinner", alex, aud(9000), List.of(alex, sam, priya)));
+
+        Group restored = Group.restore(original.id(), original.name(), original.members(), original.history());
+
+        assertEquals(original.balances(), restored.balances());
+        ExpenseId next = restored.addExpense(Expense.splitEqually("Taxi", sam, aud(3000), List.of(alex, sam)));
+        assertEquals(new ExpenseId("e2"), next);
+    }
 }
