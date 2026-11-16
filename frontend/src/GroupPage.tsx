@@ -4,6 +4,7 @@ import { deleteRequest, getJson } from './api'
 import { formatMoney } from './money'
 import { InviteButton } from './InviteButton'
 import { AddExpenseForm } from './AddExpenseForm'
+import { SettleUp } from './SettleUp'
 
 type Member = { id: string; name: string }
 type GroupDetails = { id: string; name: string; members: Member[] }
@@ -93,6 +94,13 @@ export function GroupPage() {
           ))}
         </ul>
       )}
+
+      <SettleUp
+        groupId={group.id}
+        nameOf={nameOf}
+        refreshKey={refreshKey}
+        onPaid={() => setRefreshKey(k => k + 1)}
+      />
 
       <h3>Expenses</h3>
       {expenses.length === 0 ? (
