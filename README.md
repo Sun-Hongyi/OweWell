@@ -2,37 +2,46 @@
 
 Split group expenses and settle up in the **fewest payments possible**.
 
-## Status
-🚧 Work in progress. The domain logic, REST API, PostgreSQL persistence and Google sign-in are complete; invite links and the frontend are next.
+| Sign in | Your groups | A group |
+|---|---|---|
+| ![Sign-in page](docs/screenshots/signin.png) | ![Home page](docs/screenshots/home.png) | ![Group page](docs/screenshots/group.png) |
 
-## What works so far
-- **Money handling** in integer cents, so no rounding errors and no lost cents when splitting
+## Status
+🚧 Work in progress. The full app works end to end: Google sign-in, groups, invite links, expenses with four split types, balances and settling up. Deployment is next.
+
+## Features
+- **Google sign-in** with Spring Security (OAuth2 / OpenID Connect); users are saved to Postgres when they sign in
+- **Groups and invite links:** create a group, share a link, and friends join after signing in. Links expire after 7 days, and only a SHA-256 hash of each token is stored, so a database leak doesn't expose working links
 - **Four split types** behind a `SplitStrategy` interface, all guaranteed to add up exactly to the total:
   - `EqualSplit`: everyone pays the same ($10 ÷ 3 = $3.34 + $3.33 + $3.33)
   - `SharesSplit`: split by shares ("2 drinks vs 1")
   - `PercentageSplit`: split by percentages that must total 100%
   - `ExactSplit`: each person's exact amount
-- **Expenses** that reject shares not matching the total
+- **Money handling** in integer cents, so no rounding errors and no lost cents when splitting
 - **Balances** showing who is owed and who owes across many expenses
-- **Event-sourced ledger:** expenses, voids and payments are stored as events and never deleted; balances are calculated by replaying the history
+- **Settle up** in the fewest payments, with a "Mark as paid" button for each payment
+- **Event-sourced ledger:** expenses, deletions and payments are stored as events and never erased; balances are calculated by replaying the history, so every change has an audit trail
 - **Settlement algorithms** behind a `SettlementAlgorithm` interface:
   - `GreedySettlement`: fast; the biggest debtor pays the biggest creditor
   - `OptimalSettlement`: finds the true minimum number of payments using bitmask dynamic programming, O(n·2ⁿ)
   - `AutoSettlement`: uses optimal for up to 20 people and falls back to greedy for larger groups
-- **REST API** for groups, expenses (all four split types), balances, settlement and payments, with clear 400 / 403 / 404 / 409 errors
+- **REST API** for groups, invites, expenses, balances, settlement and payments, with clear 400 / 401 / 403 / 404 / 409 / 410 errors
 - **PostgreSQL persistence:** ledger events are stored as JSONB in an append-only table and replayed to rebuild each group; the schema is managed with Flyway migrations
 - **Optimistic locking:** each group remembers the version it was loaded at, and a primary key on `(group_id, sequence)` rejects stale saves, so two simultaneous edits can't silently lose data (returned as 409 Conflict)
-- **Google sign-in** with Spring Security (OAuth2 / OpenID Connect); users are saved to Postgres when they sign in
-- **Members-only access:** the signed-in user automatically becomes a member of groups they create, and only members can view or change a group (403 Forbidden otherwise)
+- **Members-only access:** only members can view or change a group (403 Forbidden otherwise)
+- **Security:** session cookies with CSRF protection (double-submit cookie pattern), and actions that change data are never triggered just by opening a page
+- **React frontend** that works on phones and laptops
 
 ## Architecture
 Clean (hexagonal) architecture in a single Spring Boot application:
 - `domain`: pure Java business rules, with no framework code
-- `application`: use cases (`GroupService`), repository interfaces and access rules
-- `infrastructure`: Postgres repositories for the app, plus `InMemoryGroupRepository` for fast tests
+- `application`: use cases (`GroupService`, `InviteService`), repository interfaces and access rules
+- `infrastructure`: Postgres repositories for the app, plus in-memory repositories for fast tests
 - `api`: REST controllers, request/response DTOs, error handling and the signed-in user (`CurrentUser`)
 
 Swapping in-memory storage for PostgreSQL required no changes to the domain, service or API layers. The controller gets the signed-in user through a `CurrentUser` interface, so tests can use a fake user instead of real Google sign-in.
+
+The frontend (`frontend/`) is a React + TypeScript single-page app built with Vite. In development, Vite forwards API requests to Spring Boot, so the browser sees one site and the session cookie just works.
 
 ## Why "optimal" matters
 Minimising the number of payments is NP-hard. Greedy can use more payments than necessary.
@@ -55,22 +64,32 @@ Greedy is near-optimal for small groups, but the gap grows with group size. Opti
 To reproduce, run `SettlementBenchmark` in `src/test/java/owewell/domain/`.
 
 ## Tech
-Java 25 · Spring Boot 4 · Spring Security · OAuth2 · PostgreSQL · Flyway · Docker · Gradle · JUnit 5 · MockMvc · Testcontainers · GitHub Actions CI
+**Backend:** Java 25 · Spring Boot 4 · Spring Security · OAuth2 · PostgreSQL · Flyway · Docker · Gradle
+
+**Frontend:** React · TypeScript · Vite · React Router
+
+**Testing and CI:** JUnit 5 · MockMvc · Testcontainers · GitHub Actions
 
 ## Running locally
-Requires Docker, Java 25 and a Google OAuth client (from the Google Cloud Console, with the redirect URI `http://localhost:8080/login/oauth2/code/google`).
+Requires Docker, Java 25, Node.js and a Google OAuth client (from the Google Cloud Console, with the redirect URI `http://localhost:8080/login/oauth2/code/google`).
 
 1. Create a `.env` file in the project root (it's git-ignored):
    ```
    GOOGLE_CLIENT_ID=your-client-id
    GOOGLE_CLIENT_SECRET=your-client-secret
    ```
-2. Start the database and the app:
+2. Start the database and the backend:
    ```bash
    docker compose up -d      # start PostgreSQL
    ./gradlew bootRun         # start the API on http://localhost:8080
    ```
-3. Open `http://localhost:8080/me` in a browser and sign in with Google to see your account details.
+3. In a second terminal, start the frontend:
+   ```bash
+   cd frontend
+   npm install
+   npm run dev               # open http://localhost:5173
+   ```
+4. Open `http://localhost:5173` and sign in with Google.
 
 ## Running the tests
 ```bash
@@ -92,5 +111,6 @@ Integration tests use Testcontainers, so Docker must be running. No Google crede
 - [x] Google sign-in
 - [x] Members-only access to groups
 - [x] Invite links
-- [ ] React frontend
+- [x] React frontend: groups, invites, expenses (all four split types), balances, settle up
 - [ ] Deployment
+- [ ] Frontend tests
