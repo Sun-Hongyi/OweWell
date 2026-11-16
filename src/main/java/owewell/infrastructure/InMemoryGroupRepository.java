@@ -1,8 +1,8 @@
 package owewell.infrastructure;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 import owewell.application.GroupRepository;
 import owewell.domain.Group;
@@ -10,7 +10,7 @@ import owewell.domain.GroupId;
 
 public class InMemoryGroupRepository implements GroupRepository {
 
-    private final Map<GroupId, Group> groups = new HashMap<>();
+    private final Map<GroupId, Group> groups = new ConcurrentHashMap<>();
 
     @Override
     public void save(Group group) {
