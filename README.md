@@ -3,7 +3,7 @@
 Split group expenses and settle up in the **fewest payments possible**.
 
 ## Status
-🚧 Work in progress. The core domain logic and REST API are complete and tested; the database and frontend are next.
+🚧 Work in progress. The domain logic, REST API and PostgreSQL persistence are complete; sign-in and the frontend are next.
 
 ## What works so far
 - **Money handling** in integer cents, so no rounding errors and no lost cents when splitting
@@ -19,6 +19,17 @@ Split group expenses and settle up in the **fewest payments possible**.
   - `GreedySettlement`: fast; the biggest debtor pays the biggest creditor
   - `OptimalSettlement`: finds the true minimum number of payments using bitmask dynamic programming, O(n·2ⁿ)
   - `AutoSettlement`: uses optimal for up to 20 people and falls back to greedy for larger groups
+- **REST API** for groups, expenses (all four split types), balances, settlement and payments, with clear 400/404 errors
+- **PostgreSQL persistence:** ledger events are stored as JSONB in an append-only table and replayed to rebuild each group; the schema is managed with Flyway migrations
+
+## Architecture
+Clean (hexagonal) architecture in a single Spring Boot application:
+- `domain`: pure Java business rules, with no framework code
+- `application`: use cases (`GroupService`) and the `GroupRepository` interface
+- `infrastructure`: `PostgresGroupRepository` for the app, plus `InMemoryGroupRepository` for fast tests
+- `api`: REST controllers, request/response DTOs and error handling
+
+Swapping in-memory storage for PostgreSQL required no changes to the domain, service or API layers.
 
 ## Why "optimal" matters
 Minimising the number of payments is NP-hard. Greedy can use more payments than necessary.
@@ -41,7 +52,22 @@ Greedy is near-optimal for small groups, but the gap grows with group size. Opti
 To reproduce, run `SettlementBenchmark` in `src/test/java/owewell/domain/`.
 
 ## Tech
-Java 25 · Spring Boot 4 · Gradle · JUnit 5 · MockMvc · GitHub Actions CI
+Java 25 · Spring Boot 4 · PostgreSQL · Flyway · Docker · Gradle · JUnit 5 · MockMvc · GitHub Actions CI
+
+## Running locally
+Requires Docker and Java 25.
+
+```bash
+docker compose up -d      # start PostgreSQL
+./gradlew bootRun         # start the API on http://localhost:8080
+```
+
+Example:
+```bash
+curl -X POST localhost:8080/groups \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Bali Trip","members":["alex","sam","priya"]}'
+```
 
 ## Running the tests
 ```bash
@@ -56,7 +82,9 @@ Java 25 · Spring Boot 4 · Gradle · JUnit 5 · MockMvc · GitHub Actions CI
 - [x] Event-sourced ledger for expense history
 - [x] Groups and application services
 - [x] Spring Boot REST API
-- [ ] PostgreSQL persistence
+- [x] PostgreSQL persistence
+- [ ] Integration tests with Testcontainers
+- [ ] Conflict handling for concurrent edits
 - [ ] Google sign-in and invite links
 - [ ] React frontend
 - [ ] Deployment
