@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 
 type GroupSummary = { id: string; name: string }
 
-export function GroupList() {
+export function GroupList({ refreshKey }: { refreshKey: number }) {
   const [groups, setGroups] = useState<GroupSummary[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -14,7 +14,7 @@ export function GroupList() {
       })
       .then(setGroups)
       .catch(err => setError(err.message))
-  }, [])
+  }, [refreshKey])
 
   if (error) return <p>Couldn't load your groups: {error}</p>
   if (groups === null) return <p>Loading your groups…</p>
