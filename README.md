@@ -2,12 +2,14 @@
 
 Split group expenses and settle up in the **fewest payments possible**.
 
+**Live at [owewell.onrender.com](https://owewell.onrender.com)**. It runs on a free plan, so the first visit after a quiet spell can take up to a minute to wake up.
+
 | Sign in | Your groups | A group |
 |---|---|---|
 | ![Sign-in page](docs/screenshots/signin.png) | ![Home page](docs/screenshots/home.png) | ![Group page](docs/screenshots/group.png) |
 
 ## Status
-🚧 Work in progress. The full app works end to end: Google sign-in, groups, invite links, expenses with four split types, balances and settling up. Deployment is next.
+✅ Live. The full app works end to end: Google sign-in, groups, invite links, expenses with four split types, balances and settling up, deployed with Docker on Render and Neon Postgres.
 
 ## Features
 - **Google sign-in** with Spring Security (OAuth2 / OpenID Connect); users are saved to Postgres when they sign in
@@ -43,6 +45,16 @@ Swapping in-memory storage for PostgreSQL required no changes to the domain, ser
 
 The frontend (`frontend/`) is a React + TypeScript single-page app built with Vite. In development, Vite forwards API requests to Spring Boot, so the browser sees one site and the session cookie just works.
 
+## Deployment
+OweWell ships as **one Docker image** built in three stages: Node builds the React app, Gradle builds the Spring Boot jar with the React files inside it, and a slim Java runtime image runs the result. Spring Boot serves both the API and the React pages from one address, so there's no CORS setup and the session cookie works on every browser.
+
+- **App:** [Render](https://render.com) builds the Dockerfile and redeploys automatically on every push to `main`
+- **Database:** [Neon](https://neon.com) serverless Postgres in Sydney; Flyway creates and updates the schema on startup
+- **Config and secrets:** all supplied as environment variables (`SPRING_DATASOURCE_*`, `GOOGLE_CLIENT_*`, `APP_FRONTEND_URL`); nothing secret is in the repo or the image
+- **HTTPS:** handled by Render; Spring trusts its forwarded headers so the Google sign-in redirect uses `https://`
+
+Development and production use separate databases: a local Postgres in Docker for development, and Neon for the live site.
+
 ## Why "optimal" matters
 Minimising the number of payments is NP-hard. Greedy can use more payments than necessary.
 For example, with balances of +$100, +$80, −$80, −$70 and −$30, greedy needs 4 payments, while
@@ -70,6 +82,8 @@ To reproduce, run `SettlementBenchmark` in `src/test/java/owewell/domain/`.
 
 **Testing and CI:** JUnit 5 · MockMvc · Testcontainers · GitHub Actions
 
+**Deployment:** Docker (multi-stage build) · Render · Neon Postgres
+
 ## Running locally
 Requires Docker, Java 25, Node.js and a Google OAuth client (from the Google Cloud Console, with the redirect URI `http://localhost:8080/login/oauth2/code/google`).
 
@@ -90,6 +104,15 @@ Requires Docker, Java 25, Node.js and a Google OAuth client (from the Google Clo
    npm run dev               # open http://localhost:5173
    ```
 4. Open `http://localhost:5173` and sign in with Google.
+
+To run the production image locally instead:
+```bash
+docker build -t owewell .
+docker run --rm -p 8080:8080 --env-file .env \
+  -e SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/owewell \
+  -e APP_FRONTEND_URL=http://localhost:8080 \
+  owewell                   # open http://localhost:8080
+```
 
 ## Running the tests
 ```bash
@@ -112,5 +135,6 @@ Integration tests use Testcontainers, so Docker must be running. No Google crede
 - [x] Members-only access to groups
 - [x] Invite links
 - [x] React frontend: groups, invites, expenses (all four split types), balances, settle up
-- [ ] Deployment
+- [x] Deployment: Docker image on Render, Neon Postgres
+- [ ] Sessions stored in Postgres, so restarts don't sign people out
 - [ ] Frontend tests
