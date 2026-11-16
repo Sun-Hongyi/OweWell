@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class SpaController {
 
-    @GetMapping({"/group/{groupId}", "/join/{token}"})
+    @GetMapping({"/group/{groupId}", "/join/{token}", "/privacy"})
     public String forwardToReact() {
         return "forward:/index.html";
     }

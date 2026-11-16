@@ -22,8 +22,9 @@ public class SecurityConfig {
         http
             .authorizeHttpRequests(auth -> auth
                 // The React page files load for everyone, so you can see the "Sign in" button
+                // and read the privacy policy
                 .requestMatchers("/", "/index.html", "/assets/**", "/*.svg", "/*.ico",
-                                 "/group/*", "/join/*").permitAll()
+                                 "/group/*", "/join/*", "/privacy").permitAll()
                 // Everything else (your data) needs sign-in
                 .anyRequest().authenticated())
             .oauth2Login(login -> login

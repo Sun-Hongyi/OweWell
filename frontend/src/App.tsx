@@ -3,6 +3,7 @@ import { BrowserRouter, Link, Route, Routes } from 'react-router'
 import { HomePage } from './HomePage'
 import { GroupPage } from './GroupPage'
 import { JoinPage } from './JoinPage'
+import { PrivacyPage } from './PrivacyPage'
 import { csrfToken } from './api'
 
 type Me = { id: string; name: string; email: string }
@@ -39,16 +40,34 @@ function App() {
     return <p>Loading…</p>
   }
 
+  // The privacy page is public, so show it even when not signed in
+  if (!me && window.location.pathname === '/privacy') {
+    return (
+      <BrowserRouter>
+        <main><PrivacyPage /></main>
+      </BrowserRouter>
+    )
+  }
+
   if (!me) {
     return (
-      <main>
+      <main className="landing">
         <h1>OweWell</h1>
+        <p className="tagline">Split group expenses without the awkward maths.</p>
+        <ul className="features">
+          <li>👥 Create a group and invite friends with a link</li>
+          <li>🧾 Add expenses: split equally, by shares, by percentage or by exact amounts</li>
+          <li>⚖️ See who owes who at a glance</li>
+          <li>✅ Settle up in the fewest payments possible</li>
+        </ul>
         <a
           href="/oauth2/authorization/google"
           onClick={() => sessionStorage.setItem('returnTo', window.location.pathname)}
         >
           Sign in with Google
         </a>
+        <p className="small">Free. No ads. No bank details needed.</p>
+        <p className="small"><a href="/privacy">Privacy policy</a></p>
       </main>
     )
   }
@@ -65,6 +84,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/group/:groupId" element={<GroupPage />} />
           <Route path="/join/:token" element={<JoinPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
         </Routes>
       </main>
     </BrowserRouter>
