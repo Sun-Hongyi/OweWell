@@ -40,13 +40,16 @@ export function SettleUp({ groupId, nameOf, refreshKey, onPaid }: {
         <p>Everyone is settled up 🎉</p>
       ) : (
         <ul>
-          {payments.map((payment, index) => (
-            <li key={index}>
-              {nameOf(payment.from)} pays {nameOf(payment.to)}{' '}
-              {formatMoney(payment.amountCents, payment.currency)}{' '}
-              <button onClick={() => markPaid(payment)}>Mark as paid</button>
-            </li>
-          ))}
+          {payments.map((payment, index) => {
+            const payer = nameOf(payment.from)
+            return (
+              <li key={index}>
+                {payer} {payer === 'You' ? 'pay' : 'pays'} {nameOf(payment.to)}{' '}
+                {formatMoney(payment.amountCents, payment.currency)}
+                <button onClick={() => markPaid(payment)}>Mark as paid</button>
+              </li>
+            )
+          })}
         </ul>
       )}
     </>

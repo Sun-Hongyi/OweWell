@@ -17,42 +17,48 @@ type Expense = {
   voided: boolean
 }
 type Balance = { user: string; amountCents: number; currency: string }
+type Me = { id: string }
 
 export function GroupPage() {
   const { groupId } = useParams()
   const [group, setGroup] = useState<GroupDetails | null>(null)
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [balances, setBalances] = useState<Balance[]>([])
+  const [meId, setMeId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
-    // Ask for all three at once, and wait until they've all arrived
+    // Ask for everything at once, and wait until it's all arrived
     Promise.all([
       getJson<GroupDetails>(`/groups/${groupId}`),
       getJson<Expense[]>(`/groups/${groupId}/expenses`),
       getJson<Balance[]>(`/groups/${groupId}/balances`),
+      getJson<Me>('/me'),
     ])
-      .then(([details, expenseList, balanceList]) => {
+      .then(([details, expenseList, balanceList, me]) => {
         setGroup(details)
         setExpenses(expenseList)
         setBalances(balanceList)
+        setMeId(me.id)
       })
       .catch(err => setError(err.message))
-  }, [groupId, refreshKey])   // reload when the group changes OR after a change
+  }, [groupId, refreshKey])
 
   if (error) return <p>Couldn't load this group: {error}</p>
-  if (!group) return <p>Loading…</p>
+  if (!group || !meId) return <p>Loading…</p>
 
-  // Turn a user ID into their name, using the member list
+  // Turn a user ID into their name, and say "You" for yourself
   const nameOf = (userId: string) =>
-    group.members.find(member => member.id === userId)?.name ?? userId
+    userId === meId
+      ? 'You'
+      : group.members.find(member => member.id === userId)?.name ?? userId
 
   async function deleteExpense(expenseId: string) {
     if (!window.confirm('Delete this expense?')) return
     try {
       await deleteRequest(`/groups/${groupId}/expenses/${expenseId}`)
-      setRefreshKey(k => k + 1)   // reload balances and expenses
+      setRefreshKey(k => k + 1)
     } catch (err) {
       alert((err as Error).message)
     }
@@ -65,7 +71,7 @@ export function GroupPage() {
       <h3>Members</h3>
       <ul>
         {group.members.map(member => (
-          <li key={member.id}>{member.name}</li>
+          <li key={member.id}>{member.name}{member.id === meId && ' (you)'}</li>
         ))}
       </ul>
       <InviteButton groupId={group.id} />
@@ -73,7 +79,7 @@ export function GroupPage() {
       <AddExpenseForm
         groupId={group.id}
         members={group.members}
-        me={group.members[0].id}
+        me={meId}
         onAdded={() => setRefreshKey(k => k + 1)}
       />
 
@@ -85,11 +91,17 @@ export function GroupPage() {
           {balances.map(balance => (
             <li key={balance.user}>
               {nameOf(balance.user)}{' '}
-              {balance.amountCents > 0
-                ? `is owed ${formatMoney(balance.amountCents, balance.currency)}`
-                : balance.amountCents < 0
-                  ? `owes ${formatMoney(-balance.amountCents, balance.currency)}`
-                  : 'is settled up'}
+              {balance.amountCents > 0 ? (
+                <span className="owed">
+                  {balance.user === meId ? 'are' : 'is'} owed {formatMoney(balance.amountCents, balance.currency)}
+                </span>
+              ) : balance.amountCents < 0 ? (
+                <span className="owes">
+                  {balance.user === meId ? 'owe' : 'owes'} {formatMoney(-balance.amountCents, balance.currency)}
+                </span>
+              ) : (
+                <span className="settled">{balance.user === meId ? 'are' : 'is'} settled up</span>
+              )}
             </li>
           ))}
         </ul>
@@ -113,7 +125,7 @@ export function GroupPage() {
               {nameOf(expense.paidBy)}
               {expense.voided
                 ? ' (deleted)'
-                : <>{' '}<button onClick={() => deleteExpense(expense.id)}>Delete</button></>}
+                : <button onClick={() => deleteExpense(expense.id)}>Delete</button>}
             </li>
           ))}
         </ul>
