@@ -1,5 +1,6 @@
 package owewell;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -14,11 +15,13 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
-                                                   AppOidcUserService appOidcUserService) throws Exception {
+                                                   AppOidcUserService appOidcUserService,
+                                                   @Value("${app.frontend-url}") String frontendUrl) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
             .oauth2Login(login -> login
-                .userInfoEndpoint(userInfo -> userInfo.oidcUserService(appOidcUserService)))
+                .userInfoEndpoint(userInfo -> userInfo.oidcUserService(appOidcUserService))
+                .defaultSuccessUrl(frontendUrl + "/", true))
             .exceptionHandling(errors -> errors
                 .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)));
         return http.build();
