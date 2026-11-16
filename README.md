@@ -3,7 +3,7 @@
 Split group expenses and settle up in the **fewest payments possible**.
 
 ## Status
-🚧 Work in progress. The core domain logic is complete and tested; the API, database and frontend are next.
+🚧 Work in progress. The core domain logic and REST API are complete and tested; the database and frontend are next.
 
 ## What works so far
 - **Money handling** in integer cents, so no rounding errors and no lost cents when splitting
@@ -41,7 +41,7 @@ Greedy is near-optimal for small groups, but the gap grows with group size. Opti
 To reproduce, run `SettlementBenchmark` in `src/test/java/owewell/domain/`.
 
 ## Tech
-Java 25 · Gradle · JUnit 5 · GitHub Actions CI
+Java 25 · Spring Boot 4 · Gradle · JUnit 5 · MockMvc · GitHub Actions CI
 
 ## Running the tests
 ```bash
@@ -55,7 +55,7 @@ Java 25 · Gradle · JUnit 5 · GitHub Actions CI
 - [x] Benchmarks comparing greedy and optimal
 - [x] Event-sourced ledger for expense history
 - [x] Groups and application services
-- [ ] Spring Boot REST API
+- [x] Spring Boot REST API
 - [ ] PostgreSQL persistence
 - [ ] Google sign-in and invite links
 - [ ] React frontend
