@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import owewell.application.ConcurrentUpdateException;
 import owewell.application.GroupNotFoundException;
+import owewell.application.NotAGroupMemberException;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
@@ -26,6 +27,12 @@ public class ApiExceptionHandler {
     @ExceptionHandler(ConcurrentUpdateException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ApiError conflict(ConcurrentUpdateException e) {
+        return new ApiError(e.getMessage());
+    }
+
+    @ExceptionHandler(NotAGroupMemberException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ApiError forbidden(NotAGroupMemberException e) {
         return new ApiError(e.getMessage());
     }
 }

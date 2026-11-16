@@ -19,16 +19,29 @@ import com.jayway.jsonpath.JsonPath;
 
 import owewell.application.GroupService;
 import owewell.domain.AutoSettlement;
+import owewell.domain.UserId;
 import owewell.infrastructure.InMemoryGroupRepository;
 
 class GroupControllerTest {
 
     private MockMvc mvc;
 
+    // A pretend logged-in user, so the tests don't need real Google sign-in
+    static class FakeCurrentUser implements CurrentUser {
+        UserId current = new UserId("alex");
+
+        @Override
+        public UserId id() {
+            return current;
+        }
+    }
+
+    private final FakeCurrentUser currentUser = new FakeCurrentUser();
+
     @BeforeEach
     void setUp() {
         GroupService service = new GroupService(new InMemoryGroupRepository(), new AutoSettlement());
-        mvc = MockMvcBuilders.standaloneSetup(new GroupController(service))
+            mvc = MockMvcBuilders.standaloneSetup(new GroupController(service, currentUser))
             .setControllerAdvice(new ApiExceptionHandler())
             .build();
     }
@@ -205,5 +218,14 @@ class GroupControllerTest {
                     {"description":"Lunch","paidBy":"alex","amountCents":1000,"currency":"AUD"}
                     """))
             .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void nonMemberGets403() throws Exception {
+        String groupId = createGroup();
+        currentUser.current = new UserId("stranger");
+
+        mvc.perform(get("/groups/" + groupId + "/balances"))
+            .andExpect(status().isForbidden());
     }
 }

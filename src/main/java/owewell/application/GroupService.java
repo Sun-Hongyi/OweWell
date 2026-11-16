@@ -1,5 +1,6 @@
 package owewell.application;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -26,47 +27,57 @@ public class GroupService {
         this.settlement = Objects.requireNonNull(settlement);
     }
 
-    public GroupId createGroup(String name, Set<UserId> members) {
+    public GroupId createGroup(String name, Set<UserId> otherMembers, UserId creator) {
+        Set<UserId> members = new LinkedHashSet<>();
+        members.add(Objects.requireNonNull(creator, "creator is required"));
+        if (otherMembers != null) {
+            members.addAll(otherMembers);
+        }
         GroupId id = new GroupId(UUID.randomUUID().toString());
         groups.save(new Group(id, name, members));
         return id;
     }
 
-    public void addMember(GroupId groupId, UserId user) {
-        Group group = find(groupId);
-        group.addMember(user);
+    public void addMember(GroupId groupId, UserId actor, UserId newMember) {
+        Group group = findForMember(groupId, actor);
+        group.addMember(newMember);
         groups.save(group);
     }
 
-    public ExpenseId addExpense(GroupId groupId, String description, UserId paidBy,
-                                Money total, SplitStrategy split) {
-        Group group = find(groupId);
+    public ExpenseId addExpense(GroupId groupId, UserId actor, String description,
+                                UserId paidBy, Money total, SplitStrategy split) {
+        Group group = findForMember(groupId, actor);
         ExpenseId expenseId = group.addExpense(Expense.withSplit(description, paidBy, total, split));
         groups.save(group);
         return expenseId;
     }
 
-    public void voidExpense(GroupId groupId, ExpenseId expenseId) {
-        Group group = find(groupId);
+    public void voidExpense(GroupId groupId, UserId actor, ExpenseId expenseId) {
+        Group group = findForMember(groupId, actor);
         group.voidExpense(expenseId);
         groups.save(group);
     }
 
-    public void recordPayment(GroupId groupId, Payment payment) {
-        Group group = find(groupId);
+    public void recordPayment(GroupId groupId, UserId actor, Payment payment) {
+        Group group = findForMember(groupId, actor);
         group.recordPayment(payment);
         groups.save(group);
     }
 
-    public Map<UserId, Money> balances(GroupId groupId) {
-        return find(groupId).balances();
+    public Map<UserId, Money> balances(GroupId groupId, UserId actor) {
+        return findForMember(groupId, actor).balances();
     }
 
-    public List<Payment> suggestSettlement(GroupId groupId) {
-        return find(groupId).suggestSettlement(settlement);
+    public List<Payment> suggestSettlement(GroupId groupId, UserId actor) {
+        return findForMember(groupId, actor).suggestSettlement(settlement);
     }
 
-    private Group find(GroupId id) {
-        return groups.findById(id).orElseThrow(() -> new GroupNotFoundException(id));
+    // Loads the group, and refuses if the person asking isn't a member
+    private Group findForMember(GroupId id, UserId actor) {
+        Group group = groups.findById(id).orElseThrow(() -> new GroupNotFoundException(id));
+        if (!group.members().contains(actor)) {
+            throw new NotAGroupMemberException(id, actor);
+        }
+        return group;
     }
 }

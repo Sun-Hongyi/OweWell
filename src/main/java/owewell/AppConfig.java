@@ -5,6 +5,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.simple.JdbcClient;
 
 import owewell.api.AppOidcUserService;
+import owewell.api.CurrentUser;
+import owewell.api.SecurityCurrentUser;
 import owewell.application.GroupRepository;
 import owewell.application.GroupService;
 import owewell.application.UserRepository;
@@ -41,5 +43,10 @@ public class AppConfig {
     @Bean
     public AppOidcUserService appOidcUserService(UserRepository userRepository) {
         return new AppOidcUserService(userRepository);
+    }
+
+    @Bean
+    public CurrentUser currentUser() {
+        return new SecurityCurrentUser();
     }
 }

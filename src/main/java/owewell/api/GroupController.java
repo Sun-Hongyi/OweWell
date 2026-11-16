@@ -3,7 +3,6 @@ package owewell.api;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,18 +25,21 @@ import owewell.domain.UserId;
 public class GroupController {
 
     private final GroupService groups;
+    private final CurrentUser currentUser;
 
-    public GroupController(GroupService groups) {
+    public GroupController(GroupService groups, CurrentUser currentUser) {
         this.groups = groups;
+        this.currentUser = currentUser;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CreateGroupResponse createGroup(@RequestBody CreateGroupRequest request) {
-        Set<UserId> members = request.members().stream()
-            .map(UserId::new)
-            .collect(Collectors.toCollection(LinkedHashSet::new));
-        GroupId id = groups.createGroup(request.name(), members);
+        Set<UserId> others = new LinkedHashSet<>();
+        if (request.members() != null) {
+            request.members().forEach(m -> others.add(new UserId(m)));
+        }
+        GroupId id = groups.createGroup(request.name(), others, currentUser.id());
         return new CreateGroupResponse(id.value());
     }
 
@@ -47,6 +49,7 @@ public class GroupController {
                                          @RequestBody AddExpenseRequest request) {
         ExpenseId id = groups.addExpense(
             new GroupId(groupId),
+            currentUser.id(),
             request.description(),
             new UserId(request.paidBy()),
             new Money(request.amountCents(), request.currency()),
@@ -56,14 +59,14 @@ public class GroupController {
 
     @GetMapping("/{groupId}/balances")
     public List<BalanceDto> balances(@PathVariable String groupId) {
-        return groups.balances(new GroupId(groupId)).entrySet().stream()
+        return groups.balances(new GroupId(groupId), currentUser.id()).entrySet().stream()
             .map(e -> new BalanceDto(e.getKey().value(), e.getValue().cents(), e.getValue().currency()))
             .toList();
     }
 
     @GetMapping("/{groupId}/settlement")
     public List<PaymentDto> settlement(@PathVariable String groupId) {
-        return groups.suggestSettlement(new GroupId(groupId)).stream()
+        return groups.suggestSettlement(new GroupId(groupId), currentUser.id()).stream()
             .map(PaymentDto::from)
             .toList();
     }
@@ -71,7 +74,7 @@ public class GroupController {
     @PostMapping("/{groupId}/payments")
     @ResponseStatus(HttpStatus.CREATED)
     public void recordPayment(@PathVariable String groupId, @RequestBody PaymentDto request) {
-        groups.recordPayment(new GroupId(groupId), new Payment(
+        groups.recordPayment(new GroupId(groupId), currentUser.id(), new Payment(
             new UserId(request.from()),
             new UserId(request.to()),
             new Money(request.amountCents(), request.currency())));

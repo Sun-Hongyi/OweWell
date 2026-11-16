@@ -23,6 +23,7 @@ class GroupServiceTest {
     private final UserId alex = new UserId("alex");
     private final UserId sam = new UserId("sam");
     private final UserId priya = new UserId("priya");
+    private final UserId stranger = new UserId("stranger");
 
     private GroupService service;
 
@@ -36,54 +37,72 @@ class GroupServiceTest {
     }
 
     @Test
+    void creatorIsAlwaysAMember() {
+        GroupId bali = service.createGroup("Bali Trip", Set.of(), alex);
+
+        service.addExpense(bali, alex, "Snacks", alex, aud(1000), new EqualSplit(List.of(alex)));
+
+        assertTrue(service.balances(bali, alex).containsKey(alex));
+    }
+
+    @Test
     void createGroupAndAddAnExpense() {
-        GroupId bali = service.createGroup("Bali Trip", Set.of(alex, sam, priya));
+        GroupId bali = service.createGroup("Bali Trip", Set.of(sam, priya), alex);
 
-        service.addExpense(bali, "Dinner", alex, aud(9000), new EqualSplit(List.of(alex, sam, priya)));
+        service.addExpense(bali, alex, "Dinner", alex, aud(9000), new EqualSplit(List.of(alex, sam, priya)));
 
-        assertEquals(aud(6000), service.balances(bali).get(alex));
-        assertEquals(aud(-3000), service.balances(bali).get(sam));
+        assertEquals(aud(6000), service.balances(bali, alex).get(alex));
+        assertEquals(aud(-3000), service.balances(bali, sam).get(sam));
+    }
+
+    @Test
+    void nonMembersCannotSeeOrChangeAGroup() {
+        GroupId bali = service.createGroup("Bali Trip", Set.of(sam), alex);
+
+        assertThrows(NotAGroupMemberException.class, () -> service.balances(bali, stranger));
+        assertThrows(NotAGroupMemberException.class,
+            () -> service.addExpense(bali, stranger, "Sneaky", alex, aud(100), new EqualSplit(List.of(alex))));
     }
 
     @Test
     void groupsAreKeptSeparate() {
-        GroupId bali = service.createGroup("Bali Trip", Set.of(alex, sam));
-        GroupId house = service.createGroup("Share House", Set.of(alex, sam));
+        GroupId bali = service.createGroup("Bali Trip", Set.of(sam), alex);
+        GroupId house = service.createGroup("Share House", Set.of(sam), alex);
 
-        service.addExpense(bali, "Dinner", alex, aud(2000), new EqualSplit(List.of(alex, sam)));
+        service.addExpense(bali, alex, "Dinner", alex, aud(2000), new EqualSplit(List.of(alex, sam)));
 
-        assertEquals(aud(1000), service.balances(bali).get(alex));
-        assertTrue(service.balances(house).isEmpty());
+        assertEquals(aud(1000), service.balances(bali, alex).get(alex));
+        assertTrue(service.balances(house, alex).isEmpty());
     }
 
     @Test
     void unknownGroupThrowsGroupNotFound() {
         assertThrows(GroupNotFoundException.class,
-            () -> service.balances(new GroupId("does-not-exist")));
+            () -> service.balances(new GroupId("does-not-exist"), alex));
     }
 
     @Test
     void voidingAnExpenseRemovesItsEffect() {
-        GroupId bali = service.createGroup("Bali Trip", Set.of(alex, sam));
-        ExpenseId dinner = service.addExpense(bali, "Dinner", alex, aud(2000),
+        GroupId bali = service.createGroup("Bali Trip", Set.of(sam), alex);
+        ExpenseId dinner = service.addExpense(bali, alex, "Dinner", alex, aud(2000),
             new EqualSplit(List.of(alex, sam)));
 
-        service.voidExpense(bali, dinner);
+        service.voidExpense(bali, alex, dinner);
 
-        assertTrue(service.balances(bali).isEmpty());
+        assertTrue(service.balances(bali, alex).isEmpty());
     }
 
     @Test
     void settleUpEndToEnd() {
-        GroupId bali = service.createGroup("Bali Trip", Set.of(alex, sam, priya));
-        service.addExpense(bali, "Dinner", alex, aud(9000), new EqualSplit(List.of(alex, sam, priya)));
-        service.addExpense(bali, "Taxi", sam, aud(3000), new EqualSplit(List.of(alex, sam, priya)));
+        GroupId bali = service.createGroup("Bali Trip", Set.of(sam, priya), alex);
+        service.addExpense(bali, alex, "Dinner", alex, aud(9000), new EqualSplit(List.of(alex, sam, priya)));
+        service.addExpense(bali, sam, "Taxi", sam, aud(3000), new EqualSplit(List.of(alex, sam, priya)));
 
-        for (Payment p : service.suggestSettlement(bali)) {
-            service.recordPayment(bali, p);
+        for (Payment p : service.suggestSettlement(bali, alex)) {
+            service.recordPayment(bali, alex, p);
         }
 
-        for (Money balance : service.balances(bali).values()) {
+        for (Money balance : service.balances(bali, alex).values()) {
             assertTrue(balance.isZero());
         }
     }
