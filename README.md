@@ -91,6 +91,6 @@ Integration tests use Testcontainers, so Docker must be running. No Google crede
 - [x] Conflict handling for concurrent edits
 - [x] Google sign-in
 - [x] Members-only access to groups
-- [ ] Invite links
+- [x] Invite links
 - [ ] React frontend
 - [ ] Deployment
