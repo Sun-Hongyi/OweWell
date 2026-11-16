@@ -128,4 +128,82 @@ class GroupControllerTest {
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.error").value("stranger is not a member of Bali Trip"));
     }
+
+    @Test
+    void addsAnExpenseWithASharesSplit() throws Exception {
+        String groupId = createGroup();
+
+        mvc.perform(post("/groups/" + groupId + "/expenses")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"description":"Drinks","paidBy":"alex","amountCents":3000,"currency":"AUD",
+                     "split":{"type":"shares","weights":{"alex":2,"sam":1}}}
+                    """))
+            .andExpect(status().isCreated());
+
+        mvc.perform(get("/groups/" + groupId + "/balances"))
+            .andExpect(jsonPath("$[?(@.user == 'alex')].amountCents", hasItem(1000)))
+            .andExpect(jsonPath("$[?(@.user == 'sam')].amountCents", hasItem(-1000)));
+    }
+
+    @Test
+    void addsAnExpenseWithAPercentageSplit() throws Exception {
+        String groupId = createGroup();
+
+        mvc.perform(post("/groups/" + groupId + "/expenses")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"description":"Rent","paidBy":"sam","amountCents":10000,"currency":"AUD",
+                     "split":{"type":"percentage","weights":{"alex":60,"sam":40}}}
+                    """))
+            .andExpect(status().isCreated());
+
+        mvc.perform(get("/groups/" + groupId + "/balances"))
+            .andExpect(jsonPath("$[?(@.user == 'alex')].amountCents", hasItem(-6000)))
+            .andExpect(jsonPath("$[?(@.user == 'sam')].amountCents", hasItem(6000)));
+    }
+
+    @Test
+    void addsAnExpenseWithAnExactSplit() throws Exception {
+        String groupId = createGroup();
+
+        mvc.perform(post("/groups/" + groupId + "/expenses")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"description":"Taxi","paidBy":"priya","amountCents":5000,"currency":"AUD",
+                     "split":{"type":"exact","amountsCents":{"alex":2000,"sam":3000}}}
+                    """))
+            .andExpect(status().isCreated());
+
+        mvc.perform(get("/groups/" + groupId + "/balances"))
+            .andExpect(jsonPath("$[?(@.user == 'priya')].amountCents", hasItem(5000)))
+            .andExpect(jsonPath("$[?(@.user == 'alex')].amountCents", hasItem(-2000)))
+            .andExpect(jsonPath("$[?(@.user == 'sam')].amountCents", hasItem(-3000)));
+    }
+
+    @Test
+    void unknownSplitTypeReturns400() throws Exception {
+        String groupId = createGroup();
+
+        mvc.perform(post("/groups/" + groupId + "/expenses")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"description":"Mystery","paidBy":"alex","amountCents":1000,"currency":"AUD",
+                     "split":{"type":"vibes"}}
+                    """))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.error").value("Unknown split type: vibes"));
+    }
+
+    @Test
+    void missingSplitReturns400() throws Exception {
+        String groupId = createGroup();
+
+        mvc.perform(post("/groups/" + groupId + "/expenses")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"description":"Lunch","paidBy":"alex","amountCents":1000,"currency":"AUD"}
+                    """))
+            .andExpect(status().isBadRequest());
+    }
 }

@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import owewell.application.GroupService;
-import owewell.domain.EqualSplit;
 import owewell.domain.ExpenseId;
 import owewell.domain.GroupId;
 import owewell.domain.Money;
@@ -46,13 +45,12 @@ public class GroupController {
     @ResponseStatus(HttpStatus.CREATED)
     public AddExpenseResponse addExpense(@PathVariable String groupId,
                                          @RequestBody AddExpenseRequest request) {
-        List<UserId> people = request.splitBetween().stream().map(UserId::new).toList();
         ExpenseId id = groups.addExpense(
             new GroupId(groupId),
             request.description(),
             new UserId(request.paidBy()),
             new Money(request.amountCents(), request.currency()),
-            new EqualSplit(people));
+            request.toSplitStrategy());
         return new AddExpenseResponse(id.value());
     }
 
