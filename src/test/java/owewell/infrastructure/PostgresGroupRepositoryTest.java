@@ -135,4 +135,14 @@ class PostgresGroupRepositoryTest {
         // Only Alex's dinner was saved, and nothing was silently lost
         assertEquals(1, repository.findById(group.id()).orElseThrow().history().size());
     }
+
+    @Test
+    void findsGroupsForAMember() {
+        Group group = newGroup();
+        repository.save(group);
+
+        assertTrue(repository.findSummariesForMember(alex).stream()
+            .anyMatch(summary -> summary.id().equals(group.id())));
+        assertTrue(repository.findSummariesForMember(new UserId("nobody-" + UUID.randomUUID())).isEmpty());
+    }
 }

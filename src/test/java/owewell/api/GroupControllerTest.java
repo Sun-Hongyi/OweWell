@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -21,6 +22,7 @@ import owewell.application.GroupService;
 import owewell.domain.AutoSettlement;
 import owewell.domain.UserId;
 import owewell.infrastructure.InMemoryGroupRepository;
+import owewell.infrastructure.InMemoryUserRepository;
 
 class GroupControllerTest {
 
@@ -41,7 +43,8 @@ class GroupControllerTest {
     @BeforeEach
     void setUp() {
         GroupService service = new GroupService(new InMemoryGroupRepository(), new AutoSettlement());
-            mvc = MockMvcBuilders.standaloneSetup(new GroupController(service, currentUser))
+        mvc = MockMvcBuilders.standaloneSetup(
+                new GroupController(service, currentUser, new InMemoryUserRepository()))
             .setControllerAdvice(new ApiExceptionHandler())
             .build();
     }
@@ -227,5 +230,63 @@ class GroupControllerTest {
 
         mvc.perform(get("/groups/" + groupId + "/balances"))
             .andExpect(status().isForbidden());
+    }
+
+    // ---------- The four new endpoints ----------
+
+    @Test
+    void listsMyGroups() throws Exception {
+        createGroup();
+
+        mvc.perform(get("/groups"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(1)))
+            .andExpect(jsonPath("$[0].name").value("Bali Trip"));
+    }
+
+    @Test
+    void strangersSeeNoGroups() throws Exception {
+        createGroup();
+        currentUser.current = new UserId("stranger");
+
+        mvc.perform(get("/groups"))
+            .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    void groupDetailsShowMembers() throws Exception {
+        String groupId = createGroup();
+
+        mvc.perform(get("/groups/" + groupId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.name").value("Bali Trip"))
+            .andExpect(jsonPath("$.members", hasSize(3)));
+    }
+
+    @Test
+    void expenseHistoryShowsExpenses() throws Exception {
+        String groupId = createGroup();
+        addDinnerPaidByAlex(groupId);
+
+        mvc.perform(get("/groups/" + groupId + "/expenses"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(1)))
+            .andExpect(jsonPath("$[0].description").value("Dinner"))
+            .andExpect(jsonPath("$[0].voided").value(false));
+    }
+
+    @Test
+    void deletingAnExpenseVoidsItButKeepsTheHistory() throws Exception {
+        String groupId = createGroup();
+        addDinnerPaidByAlex(groupId);
+
+        mvc.perform(delete("/groups/" + groupId + "/expenses/e1"))
+            .andExpect(status().isNoContent());
+
+        mvc.perform(get("/groups/" + groupId + "/expenses"))
+            .andExpect(jsonPath("$[0].voided").value(true));     // still in the history, marked voided
+
+        mvc.perform(get("/groups/" + groupId + "/balances"))
+            .andExpect(jsonPath("$", hasSize(0)));               // but it no longer affects balances
     }
 }

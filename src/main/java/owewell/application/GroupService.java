@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import owewell.domain.Expense;
+import owewell.domain.ExpenseEntry;
 import owewell.domain.ExpenseId;
 import owewell.domain.Group;
 import owewell.domain.GroupId;
@@ -70,6 +71,18 @@ public class GroupService {
 
     public List<Payment> suggestSettlement(GroupId groupId, UserId actor) {
         return findForMember(groupId, actor).suggestSettlement(settlement);
+    }
+
+    public List<GroupSummary> groupsFor(UserId actor) {
+        return groups.findSummariesForMember(actor);
+    }
+
+    public Group group(GroupId groupId, UserId actor) {
+        return findForMember(groupId, actor);
+    }
+
+    public List<ExpenseEntry> expenseHistory(GroupId groupId, UserId actor) {
+        return findForMember(groupId, actor).expenseHistory();
     }
 
     // Loads the group, and refuses if the person asking isn't a member

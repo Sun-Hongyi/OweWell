@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import owewell.application.ConcurrentUpdateException;
 import owewell.application.GroupRepository;
+import owewell.application.GroupSummary;
 import owewell.domain.Expense;
 import owewell.domain.ExpenseId;
 import owewell.domain.Group;
@@ -167,5 +168,19 @@ public class PostgresGroupRepository implements GroupRepository {
             }
             default -> throw new IllegalStateException("Unknown event type: " + type);
         };
+    }
+
+    @Override
+    public List<GroupSummary> findSummariesForMember(UserId member) {
+        return jdbc.sql("""
+                SELECT g.id, g.name
+                FROM groups g
+                JOIN group_members m ON m.group_id = g.id
+                WHERE m.user_id = :userId
+                ORDER BY g.created_at DESC
+                """)
+            .param("userId", member.value())
+            .query((row, rowNum) -> new GroupSummary(new GroupId(row.getString("id")), row.getString("name")))
+            .list();
     }
 }

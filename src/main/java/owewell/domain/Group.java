@@ -91,4 +91,8 @@ public class Group {
             throw new IllegalArgumentException(user.value() + " is not a member of " + name);
         }
     }
+
+    public List<ExpenseEntry> expenseHistory() {
+        return ledger.expenseHistory();
+    }
 }

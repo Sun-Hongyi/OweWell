@@ -1,9 +1,11 @@
 package owewell.domain;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class Ledger {
 
@@ -72,5 +74,21 @@ public class Ledger {
 
     public int loadedEventCount() {
         return loadedEventCount;
+    }
+
+    // Every expense ever added, in order, marking the ones that were later voided
+    public List<ExpenseEntry> expenseHistory() {
+        Map<ExpenseId, Expense> added = new LinkedHashMap<>();
+        Set<ExpenseId> voided = new HashSet<>();
+        for (LedgerEvent event : events) {
+            switch (event) {
+                case LedgerEvent.ExpenseAdded e -> added.put(e.id(), e.expense());
+                case LedgerEvent.ExpenseVoided v -> voided.add(v.id());
+                case LedgerEvent.PaymentRecorded p -> { }
+            }
+        }
+        List<ExpenseEntry> history = new ArrayList<>();
+        added.forEach((id, expense) -> history.add(new ExpenseEntry(id, expense, voided.contains(id))));
+        return history;
     }
 }

@@ -106,4 +106,14 @@ class GroupServiceTest {
             assertTrue(balance.isZero());
         }
     }
+
+    @Test
+    void listsOnlyGroupsYouBelongTo() {
+        service.createGroup("Bali Trip", Set.of(sam), alex);
+        service.createGroup("Alex Only", Set.of(), alex);
+
+        assertEquals(2, service.groupsFor(alex).size());
+        assertEquals(1, service.groupsFor(sam).size());
+        assertTrue(service.groupsFor(stranger).isEmpty());
+    }
 }
