@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router'
 
 type GroupSummary = { id: string; name: string }
 
@@ -23,7 +24,9 @@ export function GroupList({ refreshKey }: { refreshKey: number }) {
   return (
     <ul>
       {groups.map(group => (
-        <li key={group.id}>{group.name}</li>
+        <li key={group.id}>
+          <Link to={`/group/${group.id}`}>{group.name}</Link>
+        </li>
       ))}
     </ul>
   )

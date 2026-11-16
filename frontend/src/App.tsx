@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
-import { GroupList } from './GroupList'
-import { CreateGroupForm } from './CreateGroupForm'
+import { BrowserRouter, Link, Route, Routes } from 'react-router'
+import { HomePage } from './HomePage'
+import { GroupPage } from './GroupPage'
 
 type Me = { id: string; name: string; email: string }
 
 function App() {
   const [me, setMe] = useState<Me | null>(null)
   const [loading, setLoading] = useState(true)
-  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
     fetch('/me')
@@ -31,13 +31,16 @@ function App() {
   }
 
   return (
-    <main>
-      <h1>OweWell</h1>
-      <p>Signed in as {me.name} ({me.email})</p>
-      <h2>Your groups</h2>
-      <CreateGroupForm onCreated={() => setRefreshKey(key => key + 1)} />
-      <GroupList refreshKey={refreshKey} />
-    </main>
+    <BrowserRouter>
+      <main>
+        <h1><Link to="/">OweWell</Link></h1>
+        <p>Signed in as {me.name} ({me.email})</p>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/group/:groupId" element={<GroupPage />} />
+        </Routes>
+      </main>
+    </BrowserRouter>
   )
 }
 

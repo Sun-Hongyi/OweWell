@@ -20,3 +20,13 @@ export async function postJson<T>(url: string, body: unknown): Promise<T> {
   }
   return res.status === 204 ? (undefined as T) : res.json()
 }
+
+// Sends a GET request and returns the JSON, or throws the backend's error message
+export async function getJson<T>(url: string): Promise<T> {
+  const res = await fetch(url)
+  if (!res.ok) {
+    const error = await res.json().catch(() => null)
+    throw new Error(error?.error ?? `Request failed with status ${res.status}`)
+  }
+  return res.json()
+}
