@@ -83,8 +83,8 @@ curl -X POST localhost:8080/groups \
 - [x] Groups and application services
 - [x] Spring Boot REST API
 - [x] PostgreSQL persistence
-- [ ] Integration tests with Testcontainers
-- [ ] Conflict handling for concurrent edits
+- [x] Integration tests with Testcontainers
+- [x] Conflict handling for concurrent edits
 - [ ] Google sign-in and invite links
 - [ ] React frontend
 - [ ] Deployment
