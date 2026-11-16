@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: owewell
+      POSTGRES_USER: owewell
+      POSTGRES_PASSWORD: owewell
+    ports:
+      - "5432:5432"
+    volumes:
+      - owewell-data:/var/lib/postgresql/data
+
+volumes:
+  owewell-data:
