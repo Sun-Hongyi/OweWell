@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import { getJson } from './api'
 import { formatMoney } from './money'
+import { InviteButton } from './InviteButton'
 
 type Member = { id: string; name: string }
 type GroupDetails = { id: string; name: string; members: Member[] }
@@ -54,6 +55,7 @@ export function GroupPage() {
           <li key={member.id}>{member.name}</li>
         ))}
       </ul>
+      <InviteButton groupId={group.id} />
 
       <h3>Balances</h3>
       {balances.length === 0 ? (
