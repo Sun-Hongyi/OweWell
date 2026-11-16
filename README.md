@@ -7,10 +7,15 @@ Split group expenses and settle up in the **fewest payments possible**.
 
 ## What works so far
 - **Money handling** in integer cents, so no rounding errors and no lost cents when splitting
-- **Equal splits** that always add up exactly to the total ($10 ÷ 3 = $3.34 + $3.33 + $3.33)
+- **Four split types** behind a `SplitStrategy` interface, all guaranteed to add up exactly to the total:
+  - `EqualSplit`: everyone pays the same ($10 ÷ 3 = $3.34 + $3.33 + $3.33)
+  - `SharesSplit`: split by shares ("2 drinks vs 1")
+  - `PercentageSplit`: split by percentages that must total 100%
+  - `ExactSplit`: each person's exact amount
 - **Expenses** that reject shares not matching the total
 - **Balances** showing who is owed and who owes across many expenses
-- **Settlement algorithms:**
+- **Event-sourced ledger:** expenses, voids and payments are stored as events and never deleted; balances are calculated by replaying the history
+- **Settlement algorithms** behind a `SettlementAlgorithm` interface:
   - `GreedySettlement`: fast; the biggest debtor pays the biggest creditor
   - `OptimalSettlement`: finds the true minimum number of payments using bitmask dynamic programming, O(n·2ⁿ)
   - `AutoSettlement`: uses optimal for up to 20 people and falls back to greedy for larger groups
@@ -45,9 +50,11 @@ Java 25 · Gradle · JUnit 5 · GitHub Actions CI
 
 ## Roadmap
 - [x] Core domain: money, splits, expenses, balances
+- [x] Four split types behind a `SplitStrategy` interface
 - [x] Greedy and optimal settlement algorithms
 - [x] Benchmarks comparing greedy and optimal
-- [ ] Event-sourced ledger for expense history
+- [x] Event-sourced ledger for expense history
+- [ ] Groups and application services
 - [ ] Spring Boot REST API
 - [ ] PostgreSQL persistence
 - [ ] Google sign-in and invite links
