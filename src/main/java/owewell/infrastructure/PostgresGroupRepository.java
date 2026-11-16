@@ -7,9 +7,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.transaction.annotation.Transactional;
 
+import owewell.application.ConcurrentUpdateException;
 import owewell.application.GroupRepository;
 import owewell.domain.Expense;
 import owewell.domain.ExpenseId;
@@ -56,24 +58,25 @@ public class PostgresGroupRepository implements GroupRepository {
                 .update();
         }
 
-        // The ledger only ever grows, so only insert events that aren't saved yet
-        long alreadySaved = jdbc.sql("SELECT COUNT(*) FROM ledger_events WHERE group_id = :groupId")
-            .param("groupId", groupId)
-            .query(Long.class)
-            .single();
-
+        // Insert only the events added since this group was loaded (its version).
+        // If someone else saved in the meantime, their events already use these
+        // sequence numbers, so the primary key rejects ours.
         List<LedgerEvent> history = group.history();
-        for (int i = (int) alreadySaved; i < history.size(); i++) {
-            LedgerEvent event = history.get(i);
-            jdbc.sql("""
-                    INSERT INTO ledger_events (group_id, sequence, type, payload)
-                    VALUES (:groupId, :sequence, :type, CAST(:payload AS jsonb))
-                    """)
-                .param("groupId", groupId)
-                .param("sequence", i + 1)
-                .param("type", typeOf(event))
-                .param("payload", toJson(event))
-                .update();
+        try {
+            for (int i = group.version(); i < history.size(); i++) {
+                LedgerEvent event = history.get(i);
+                jdbc.sql("""
+                        INSERT INTO ledger_events (group_id, sequence, type, payload)
+                        VALUES (:groupId, :sequence, :type, CAST(:payload AS jsonb))
+                        """)
+                    .param("groupId", groupId)
+                    .param("sequence", i + 1)
+                    .param("type", typeOf(event))
+                    .param("payload", toJson(event))
+                    .update();
+            }
+        } catch (DuplicateKeyException e) {
+            throw new ConcurrentUpdateException(group.id());
         }
     }
 

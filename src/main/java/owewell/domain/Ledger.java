@@ -9,6 +9,7 @@ public class Ledger {
 
     private final List<LedgerEvent> events = new ArrayList<>();
     private int nextExpenseNumber = 1;
+    private int loadedEventCount = 0;
 
     public ExpenseId addExpense(Expense expense) {
         ExpenseId id = new ExpenseId("e" + nextExpenseNumber++);
@@ -65,6 +66,11 @@ public class Ledger {
                 ledger.nextExpenseNumber++;
             }
         }
+        ledger.loadedEventCount = history.size();
         return ledger;
+    }
+
+    public int loadedEventCount() {
+        return loadedEventCount;
     }
 }

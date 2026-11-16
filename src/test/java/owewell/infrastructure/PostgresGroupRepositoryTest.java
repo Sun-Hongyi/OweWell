@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import org.flywaydb.core.Flyway;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,6 +17,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
+import owewell.application.ConcurrentUpdateException;
 import owewell.domain.Expense;
 import owewell.domain.ExpenseId;
 import owewell.domain.Group;
@@ -113,5 +115,24 @@ class PostgresGroupRepositoryTest {
         repository.save(loaded);
 
         assertTrue(repository.findById(group.id()).orElseThrow().members().contains(new UserId("jordan")));
+    }
+
+    @Test
+    void twoPeopleEditingAtOnceIsDetected() {
+        Group group = newGroup();
+        repository.save(group);
+
+        // Alex and Sam both load the same version of the group
+        Group alexCopy = repository.findById(group.id()).orElseThrow();
+        Group samCopy = repository.findById(group.id()).orElseThrow();
+
+        alexCopy.addExpense(Expense.splitEqually("Dinner", alex, aud(9000), List.of(alex, sam, priya)));
+        repository.save(alexCopy);   // Alex saves first: fine
+
+        samCopy.addExpense(Expense.splitEqually("Taxi", sam, aud(3000), List.of(alex, sam)));
+        assertThrows(ConcurrentUpdateException.class, () -> repository.save(samCopy));   // Sam is rejected
+
+        // Only Alex's dinner was saved, and nothing was silently lost
+        assertEquals(1, repository.findById(group.id()).orElseThrow().history().size());
     }
 }

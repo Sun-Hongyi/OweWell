@@ -82,6 +82,10 @@ public class Group {
         return ledger.events();
     }
 
+    public int version() {
+        return ledger.loadedEventCount();
+    }
+
     private void requireMember(UserId user) {
         if (!members.contains(user)) {
             throw new IllegalArgumentException(user.value() + " is not a member of " + name);
