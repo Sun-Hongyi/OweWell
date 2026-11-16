@@ -31,9 +31,14 @@ public record Expense(String description, UserId paidBy, Money total, Map<UserId
         shares = Map.copyOf(shares);
     }
 
+    public static Expense withSplit(String description, UserId paidBy,
+                                    Money total, SplitStrategy strategy) {
+        Map<UserId, Money> shares = strategy.split(total);
+        return new Expense(description, paidBy, total, shares);
+    }
+
     public static Expense splitEqually(String description, UserId paidBy,
                                        Money total, List<UserId> people) {
-        Map<UserId, Money> shares = new EqualSplit(people).split(total);
-        return new Expense(description, paidBy, total, shares);
+        return withSplit(description, paidBy, total, new EqualSplit(people));
     }
 }

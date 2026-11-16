@@ -1,5 +1,6 @@
 package owewell.domain;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -43,5 +44,28 @@ class ExpenseTest {
     void throwsExceptionWhenTotalIsNotPositive() {
         assertThrows(IllegalArgumentException.class, () ->
             Expense.splitEqually("Refund?", alex, new Money(0, "AUD"), List.of(alex, sam)));
+    }
+
+    @Test
+    void createsExpenseWithPercentageSplit() {
+        Map<UserId, Integer> percentages = new LinkedHashMap<>();
+        percentages.put(alex, 60);
+        percentages.put(sam, 40);
+
+        Expense dinner = Expense.withSplit(
+            "Dinner", alex, new Money(10000, "AUD"), new PercentageSplit(percentages));
+
+        assertEquals(new Money(6000, "AUD"), dinner.shares().get(alex));
+        assertEquals(new Money(4000, "AUD"), dinner.shares().get(sam));
+    }
+
+    @Test
+    void createsExpenseWithExactSplit() {
+        Expense taxi = Expense.withSplit(
+            "Taxi", sam, new Money(5000, "AUD"),
+            new ExactSplit(Map.of(alex, new Money(2000, "AUD"), sam, new Money(3000, "AUD"))));
+
+        assertEquals(new Money(2000, "AUD"), taxi.shares().get(alex));
+        assertEquals(new Money(3000, "AUD"), taxi.shares().get(sam));
     }
 }
