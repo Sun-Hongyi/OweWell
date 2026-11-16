@@ -1,12 +1,10 @@
 spring:
   config:
     import: optional:file:.env[.properties]
-
   datasource:
     url: jdbc:postgresql://localhost:5432/owewell
     username: owewell
     password: owewell
-
   security:
     oauth2:
       client:
@@ -16,5 +14,9 @@ spring:
             client-secret: ${GOOGLE_CLIENT_SECRET}
             scope: openid, profile, email
 
+server:
+  port: ${PORT:8080}
+  forward-headers-strategy: framework
+
 app:
-  frontend-url: http://localhost:5173
+  frontend-url: http://localhost:8080
