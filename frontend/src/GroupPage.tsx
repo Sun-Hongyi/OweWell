@@ -3,6 +3,7 @@ import { useParams } from 'react-router'
 import { getJson } from './api'
 import { formatMoney } from './money'
 import { InviteButton } from './InviteButton'
+import { AddExpenseForm } from './AddExpenseForm'
 
 type Member = { id: string; name: string }
 type GroupDetails = { id: string; name: string; members: Member[] }
@@ -22,6 +23,7 @@ export function GroupPage() {
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [balances, setBalances] = useState<Balance[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
     // Ask for all three at once, and wait until they've all arrived
@@ -36,7 +38,7 @@ export function GroupPage() {
         setBalances(balanceList)
       })
       .catch(err => setError(err.message))
-  }, [groupId])
+  }, [groupId, refreshKey])   // reload when the group changes OR after adding an expense
 
   if (error) return <p>Couldn't load this group: {error}</p>
   if (!group) return <p>Loading…</p>
@@ -56,6 +58,13 @@ export function GroupPage() {
         ))}
       </ul>
       <InviteButton groupId={group.id} />
+
+      <AddExpenseForm
+        groupId={group.id}
+        members={group.members}
+        me={group.members[0].id}
+        onAdded={() => setRefreshKey(k => k + 1)}
+      />
 
       <h3>Balances</h3>
       {balances.length === 0 ? (
