@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import owewell.application.ConcurrentUpdateException;
 import owewell.application.GroupNotFoundException;
+import owewell.application.GroupNotSettledException;
 import owewell.application.InviteExpiredException;
 import owewell.application.InviteNotFoundException;
 import owewell.application.NotAGroupMemberException;
@@ -47,6 +48,12 @@ public class ApiExceptionHandler {
     @ExceptionHandler(InviteExpiredException.class)
     @ResponseStatus(HttpStatus.GONE)
     public ApiError inviteExpired(InviteExpiredException e) {
+        return new ApiError(e.getMessage());
+    }
+
+    @ExceptionHandler(GroupNotSettledException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError groupNotSettled(GroupNotSettledException e) {
         return new ApiError(e.getMessage());
     }
 }

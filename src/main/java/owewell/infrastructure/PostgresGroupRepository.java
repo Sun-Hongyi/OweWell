@@ -81,11 +81,19 @@ public class PostgresGroupRepository implements GroupRepository {
         }
     }
 
+    // Soft delete: the group and its history stay in the database, but it's hidden everywhere
+    @Override
+    public void markDeleted(GroupId id) {
+        jdbc.sql("UPDATE groups SET deleted_at = now() WHERE id = :id AND deleted_at IS NULL")
+            .param("id", id.value())
+            .update();
+    }
+
     // ---------- Loading (database → object) ----------
 
     @Override
     public Optional<Group> findById(GroupId id) {
-        Optional<String> name = jdbc.sql("SELECT name FROM groups WHERE id = :id")
+        Optional<String> name = jdbc.sql("SELECT name FROM groups WHERE id = :id AND deleted_at IS NULL")
             .param("id", id.value())
             .query(String.class)
             .optional();
@@ -109,6 +117,21 @@ public class PostgresGroupRepository implements GroupRepository {
             .list();
 
         return Optional.of(Group.restore(id, name.get(), members, events));
+    }
+
+    @Override
+    public List<GroupSummary> findSummariesForMember(UserId member) {
+        return jdbc.sql("""
+                SELECT g.id, g.name
+                FROM groups g
+                JOIN group_members m ON m.group_id = g.id
+                WHERE m.user_id = :userId
+                  AND g.deleted_at IS NULL
+                ORDER BY g.created_at DESC
+                """)
+            .param("userId", member.value())
+            .query((row, rowNum) -> new GroupSummary(new GroupId(row.getString("id")), row.getString("name")))
+            .list();
     }
 
     // ---------- Turning events into JSON and back ----------
@@ -168,19 +191,5 @@ public class PostgresGroupRepository implements GroupRepository {
             }
             default -> throw new IllegalStateException("Unknown event type: " + type);
         };
-    }
-
-    @Override
-    public List<GroupSummary> findSummariesForMember(UserId member) {
-        return jdbc.sql("""
-                SELECT g.id, g.name
-                FROM groups g
-                JOIN group_members m ON m.group_id = g.id
-                WHERE m.user_id = :userId
-                ORDER BY g.created_at DESC
-                """)
-            .param("userId", member.value())
-            .query((row, rowNum) -> new GroupSummary(new GroupId(row.getString("id")), row.getString("name")))
-            .list();
     }
 }

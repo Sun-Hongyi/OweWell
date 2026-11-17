@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 import { deleteRequest, getJson } from './api'
 import { formatMoney } from './money'
 import { InviteButton } from './InviteButton'
@@ -27,6 +27,7 @@ function initials(name: string) {
 
 export function GroupPage() {
   const { groupId } = useParams()
+  const navigate = useNavigate()
   const [group, setGroup] = useState<GroupDetails | null>(null)
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [balances, setBalances] = useState<Balance[]>([])
@@ -65,6 +66,19 @@ export function GroupPage() {
   const myBalance = balances.find(balance => balance.user === meId)
   const myCents = myBalance?.amountCents ?? 0
   const currency = myBalance?.currency ?? 'AUD'
+
+  // A group can only be deleted once nobody owes anything
+  const everyoneSettled = balances.every(balance => balance.amountCents === 0)
+
+  async function deleteGroup() {
+    if (!window.confirm(`Delete "${group?.name}"? It will disappear for every member.`)) return
+    try {
+      await deleteRequest(`/groups/${groupId}`)
+      navigate('/')   // back to your groups list
+    } catch (err) {
+      alert((err as Error).message)
+    }
+  }
 
   async function deleteExpense(expenseId: string) {
     if (!window.confirm('Delete this expense?')) return
@@ -193,6 +207,14 @@ export function GroupPage() {
           ))}
         </ul>
       )}
+
+      {/* Delete the whole group (only once everyone is settled up) */}
+      <div className="danger-zone">
+        <button className="btn-danger" onClick={deleteGroup} disabled={!everyoneSettled}>
+          Delete group
+        </button>
+        {!everyoneSettled && <p className="small">Settle up before deleting this group.</p>}
+      </div>
     </>
   )
 }

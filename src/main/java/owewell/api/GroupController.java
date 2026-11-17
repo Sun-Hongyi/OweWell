@@ -68,6 +68,12 @@ public class GroupController {
         return new GroupDetailsDto(group.id().value(), group.name(), members);
     }
 
+    @DeleteMapping("/{groupId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteGroup(@PathVariable String groupId) {
+        groups.deleteGroup(new GroupId(groupId), currentUser.id());
+    }
+
     // ---------- Expenses ----------
 
     @GetMapping("/{groupId}/expenses")

@@ -65,6 +65,18 @@ public class GroupService {
         groups.save(group);
     }
 
+    // Any member can delete a group, but only once everyone is settled up,
+    // so nobody's debt disappears. It's a soft delete: the history is kept.
+    public void deleteGroup(GroupId groupId, UserId actor) {
+        Group group = findForMember(groupId, actor);
+        boolean everyoneSettled = group.balances().values().stream()
+            .allMatch(balance -> balance.cents() == 0);
+        if (!everyoneSettled) {
+            throw new GroupNotSettledException(groupId);
+        }
+        groups.markDeleted(groupId);
+    }
+
     public Map<UserId, Money> balances(GroupId groupId, UserId actor) {
         return findForMember(groupId, actor).balances();
     }
