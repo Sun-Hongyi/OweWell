@@ -5,6 +5,7 @@ import { formatMoney } from './money'
 import { InviteButton } from './InviteButton'
 import { AddExpenseForm } from './AddExpenseForm'
 import { SettleUp } from './SettleUp'
+import { Modal } from './Modal'
 
 type Member = { id: string; name: string }
 type GroupDetails = { id: string; name: string; members: Member[] }
@@ -19,6 +20,11 @@ type Expense = {
 type Balance = { user: string; amountCents: number; currency: string }
 type Me = { id: string }
 
+// "Hongyi Sun" → "HS"
+function initials(name: string) {
+  return name.split(' ').map(part => part[0]).slice(0, 2).join('').toUpperCase()
+}
+
 export function GroupPage() {
   const { groupId } = useParams()
   const [group, setGroup] = useState<GroupDetails | null>(null)
@@ -27,6 +33,7 @@ export function GroupPage() {
   const [meId, setMeId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [adding, setAdding] = useState(false)   // is the "Add expense" pop-up open?
 
   useEffect(() => {
     // Ask for everything at once, and wait until it's all arrived
@@ -54,6 +61,11 @@ export function GroupPage() {
       ? 'You'
       : group.members.find(member => member.id === userId)?.name ?? userId
 
+  // My own balance, for the big summary card
+  const myBalance = balances.find(balance => balance.user === meId)
+  const myCents = myBalance?.amountCents ?? 0
+  const currency = myBalance?.currency ?? 'AUD'
+
   async function deleteExpense(expenseId: string) {
     if (!window.confirm('Delete this expense?')) return
     try {
@@ -66,22 +78,67 @@ export function GroupPage() {
 
   return (
     <>
-      <h2>{group.name}</h2>
+      {/* Group name and member avatars */}
+      <div className="group-header">
+        <h2>{group.name}</h2>
+        <div className="members">
+          {group.members.map(member => (
+            <span
+              key={member.id}
+              className="avatar avatar-sm"
+              title={member.id === meId ? `${member.name} (you)` : member.name}
+            >
+              {initials(member.name)}
+            </span>
+          ))}
+          <span className="member-count">
+            {group.members.length} {group.members.length === 1 ? 'member' : 'members'}
+          </span>
+        </div>
+      </div>
 
-      <h3>Members</h3>
-      <ul>
-        {group.members.map(member => (
-          <li key={member.id}>{member.name}{member.id === meId && ' (you)'}</li>
-        ))}
-      </ul>
+      {/* The big summary card */}
+      <section className="summary">
+        {myCents > 0 ? (
+          <>
+            <span className="summary-label">You are owed</span>
+            <span className="summary-amount owed">{formatMoney(myCents, currency)}</span>
+          </>
+        ) : myCents < 0 ? (
+          <>
+            <span className="summary-label">You owe</span>
+            <span className="summary-amount owes">{formatMoney(-myCents, currency)}</span>
+          </>
+        ) : (
+          <>
+            <span className="summary-label">You're all</span>
+            <span className="summary-amount">settled up</span>
+          </>
+        )}
+        <div className="summary-actions">
+          <button onClick={() => setAdding(true)}>+ Add expense</button>
+        </div>
+      </section>
+
+      {group.members.length === 1 && (
+        <p className="hint">You're the only one here. Invite friends to start splitting.</p>
+      )}
       <InviteButton groupId={group.id} />
 
-      <AddExpenseForm
-        groupId={group.id}
-        members={group.members}
-        me={meId}
-        onAdded={() => setRefreshKey(k => k + 1)}
-      />
+      {/* The add-expense form, in a pop-up */}
+      {adding && (
+        <Modal onClose={() => setAdding(false)}>
+          <AddExpenseForm
+            groupId={group.id}
+            members={group.members}
+            me={meId}
+            onAdded={() => {
+              setAdding(false)
+              setRefreshKey(k => k + 1)
+            }}
+          />
+        </Modal>
+      )}
 
       <h3>Balances</h3>
       {balances.length === 0 ? (
@@ -120,12 +177,18 @@ export function GroupPage() {
       ) : (
         <ul>
           {expenses.map(expense => (
-            <li key={expense.id} style={expense.voided ? { textDecoration: 'line-through', opacity: 0.6 } : {}}>
-              {expense.description}: {formatMoney(expense.totalCents, expense.currency)}, paid by{' '}
-              {nameOf(expense.paidBy)}
-              {expense.voided
-                ? ' (deleted)'
-                : <button onClick={() => deleteExpense(expense.id)}>Delete</button>}
+            <li key={expense.id} className={expense.voided ? 'expense voided' : 'expense'}>
+              <div className="expense-main">
+                <strong>{expense.description}</strong>
+                <span className="sub">
+                  Paid by {nameOf(expense.paidBy)}
+                  {expense.voided && ' · deleted'}
+                </span>
+              </div>
+              <span className="amount">{formatMoney(expense.totalCents, expense.currency)}</span>
+              {!expense.voided && (
+                <button onClick={() => deleteExpense(expense.id)}>Delete</button>
+              )}
             </li>
           ))}
         </ul>

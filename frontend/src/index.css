@@ -1,17 +1,19 @@
-/* ---------- Base ---------- */
+/* ---------- Theme ---------- */
 :root {
-  --bg: #f6f7f9;
-  --card: #ffffff;
-  --text: #1c1f24;
-  --muted: #6b7280;
-  --border: #e3e6ea;
-  --accent: #0f9d7a;        /* OweWell green */
-  --accent-dark: #0b7d61;
-  --danger: #d9443b;
-  --radius: 12px;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --bg-dark: #140808;
+  --bg-mid: #2a0f0a;
+  --bg-warm: #7a2c14;
+  --card: rgba(255, 255, 255, 0.06);
+  --card-border: rgba(255, 255, 255, 0.1);
+  --text: #fff7f2;
+  --muted: #c9b3a8;
+  --accent: #ec6a2c;
+  --accent-2: #f2a03d;
+  --owed: #5fd49a;
+  --owes: #ff8a7a;
+  --radius: 14px;
+  font-family: 'Avenir Next', 'Gill Sans', 'Segoe UI', system-ui, sans-serif;
   color: var(--text);
-  background: var(--bg);
   line-height: 1.5;
 }
 
@@ -19,41 +21,109 @@
 
 body {
   margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-mid) 45%, var(--bg-warm) 100%);
+  background-attachment: fixed;
 }
 
-main {
-  max-width: 640px;          /* readable width on laptops */
+a { color: var(--accent-2); }
+
+/* ---------- Top bar ---------- */
+.topbar {
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 24px 16px 64px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.brand {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+}
+.brand span { color: var(--accent); }
+
+/* ---------- Icon nav (icon swaps to its name on hover) ---------- */
+.nav { display: flex; align-items: center; gap: 8px; }
+
+.nav-item {
+  display: grid;
+  place-items: center;
+  width: 130px;
+  height: 48px;
+  padding: 0;
+  background: none;
+  border: none;
+  box-shadow: none;
+  color: var(--muted);
+  text-decoration: none;
+  cursor: pointer;
+}
+/* stack the icon and the label in the same spot */
+.nav-item > span { grid-area: 1 / 1; transition: opacity 0.2s, transform 0.2s; }
+.nav-icon svg { width: 26px; height: 26px; display: block; }
+.nav-label {
+  opacity: 0;
+  transform: translateY(6px);
+  font-size: 15px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text);
+  white-space: nowrap;
+}
+/* on hover (or keyboard focus): hide the icon, show the word */
+.nav-item:hover .nav-icon,
+.nav-item:focus-visible .nav-icon { opacity: 0; transform: translateY(-6px); }
+.nav-item:hover .nav-label,
+.nav-item:focus-visible .nav-label { opacity: 1; transform: none; }
+.nav-item:hover { filter: none; }
+/* the page you're on stays bright */
+.nav-item.active { color: var(--text); }
+
+/* round avatar with your initials */
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 15px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
 }
 
-/* ---------- Headings ---------- */
-h1 { margin: 0 0 4px; font-size: 28px; }
-h1 a { color: var(--accent); text-decoration: none; }
-h2 { margin: 24px 0 8px; font-size: 24px; }
+/* ---------- Page ---------- */
+main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 8px 20px 80px;
+}
+h2 { font-size: 32px; margin: 16px 0 8px; }
 h3 {
-  margin: 28px 0 8px;
-  font-size: 14px;
+  margin: 32px 0 10px;
+  font-size: 13px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.14em;
   color: var(--muted);
 }
+p { color: var(--muted); }
 
-main > p:first-of-type { color: var(--muted); font-size: 14px; }
-
-/* ---------- Lists become cards ---------- */
-ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+/* ---------- Cards (lists and forms) ---------- */
+ul, form {
   background: var(--card);
-  border: 1px solid var(--border);
+  border: 1px solid var(--card-border);
   border-radius: var(--radius);
-  overflow: hidden;
+  backdrop-filter: blur(8px);
 }
+ul { list-style: none; padding: 0; margin: 0; overflow: hidden; }
 li {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--card-border);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -61,69 +131,191 @@ li {
 }
 li:last-child { border-bottom: none; }
 li a { color: var(--text); font-weight: 600; text-decoration: none; }
-li a:hover { color: var(--accent); }
-li button { margin-left: auto; }   /* push buttons to the right */
+li a:hover { color: var(--accent-2); }
+li button { margin-left: auto; }
 
-/* ---------- Forms ---------- */
-form {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px;
-  margin-top: 16px;
-}
+form { padding: 20px; margin-top: 20px; }
 form h3 { margin-top: 0; }
-form label { padding: 4px 0; }
+form label { padding: 4px 0; color: var(--text); }
 
+/* ---------- Inputs ---------- */
 input, select {
   font: inherit;
-  padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: #fff;
+  color: var(--text);
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 10px 12px;
 }
-input:focus, select:focus {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
+input::placeholder { color: var(--muted); opacity: 0.7; }
+input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+option { color: #1c1c1c; }
 input[type='checkbox'] { width: 18px; height: 18px; accent-color: var(--accent); }
 
 /* ---------- Buttons ---------- */
-button {
+button, .btn-primary {
   font: inherit;
   font-weight: 600;
-  padding: 8px 14px;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 10px 20px;
   border: none;
-  border-radius: 8px;
-  background: var(--accent);
+  border-radius: 10px;
   color: #fff;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  box-shadow: 0 8px 24px rgba(236, 106, 44, 0.3);
   cursor: pointer;
-}
-button:hover { background: var(--accent-dark); }
-button:disabled { opacity: 0.6; cursor: default; }
-
-/* smaller buttons inside lists (Delete, Mark as paid) */
-li button { padding: 4px 10px; font-size: 14px; }
-
-/* the sign in link looks like a button */
-main > a[href*='oauth2'] {
-  display: inline-block;
-  margin-top: 16px;
-  padding: 12px 20px;
-  background: var(--accent);
-  color: #fff;
-  border-radius: 8px;
   text-decoration: none;
-  font-weight: 600;
+  display: inline-block;
 }
+button:hover, .btn-primary:hover { filter: brightness(1.08); }
+button:disabled { opacity: 0.6; cursor: default; }
+.btn-lg { padding: 16px 40px; font-size: 18px; letter-spacing: 0.14em; }
 
-/* ---------- Balance colours ---------- */
-.owed { color: var(--accent); font-weight: 600; }
-.owes { color: var(--danger); font-weight: 600; }
+/* quieter buttons: the small ones inside lists */
+.btn-ghost, li button {
+  background: transparent;
+  border: 1px solid var(--card-border);
+  box-shadow: none;
+  color: var(--text);
+}
+li button { padding: 6px 12px; font-size: 12px; }
+.btn-ghost:hover, li button:hover { background: rgba(255, 255, 255, 0.08); filter: none; }
+
+/* ---------- Balances ---------- */
+.owed { color: var(--owed); font-weight: 600; }
+.owes { color: var(--owes); font-weight: 600; }
 .settled { color: var(--muted); }
 
+/* ---------- Landing page ---------- */
+.hero {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 60px 24px 40px;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  align-items: center;
+  gap: 40px;
+}
+.hero h1 { font-size: 64px; line-height: 1.1; margin: 0 0 24px; }
+.hero .tagline { font-size: 17px; letter-spacing: 0.12em; color: var(--text); opacity: 0.85; margin: 0 0 40px; }
+.hero-art {
+  width: 100%;
+  max-width: 380px;
+  justify-self: center;
+  filter: drop-shadow(0 24px 40px rgba(0, 0, 0, 0.45));
+}
+.features {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px 24px 80px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+.feature {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.feature strong { display: block; margin-bottom: 6px; color: var(--text); }
+.feature span { color: var(--muted); font-size: 14px; }
+.small { font-size: 13px; color: var(--muted); margin-top: 20px; }
+
+/* ---------- Group page ---------- */
+.group-header { margin: 8px 0 20px; }
+.group-header h2 { margin-bottom: 10px; }
+.members { display: flex; align-items: center; }
+.avatar-sm {
+  width: 34px;
+  height: 34px;
+  font-size: 12px;
+  border: 2px solid var(--bg-mid);
+  margin-left: -8px;   /* overlap the circles a little */
+}
+.avatar-sm:first-child { margin-left: 0; }
+.member-count { margin-left: 12px; color: var(--muted); font-size: 14px; }
+
+/* the big "You are owed $X" card */
+.summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 32px 20px;
+  margin-bottom: 16px;
+  border-radius: 18px;
+  border: 1px solid var(--card-border);
+  background: linear-gradient(135deg, rgba(236, 106, 44, 0.22), rgba(242, 160, 61, 0.06));
+}
+.summary-label {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+}
+.summary-amount { font-size: 46px; font-weight: 700; line-height: 1.1; }
+.summary-actions { margin-top: 18px; }
+.hint { text-align: center; }
+
+/* expense rows: description + "paid by" on the left, amount on the right */
+.expense-main { display: flex; flex-direction: column; }
+.expense-main .sub { font-size: 13px; color: var(--muted); }
+.amount { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
+.expense button { margin-left: 12px; }
+.expense.voided { opacity: 0.5; }
+.expense.voided strong, .expense.voided .amount { text-decoration: line-through; }
+
+/* ---------- Pop-up (modal) ---------- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(10, 4, 4, 0.7);
+  backdrop-filter: blur(4px);
+}
+.modal {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow: auto;
+  background: #24100c;
+  border: 1px solid var(--card-border);
+  border-radius: 18px;
+}
+.modal form { margin: 0; border: none; background: none; }
+.modal-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  padding: 2px 10px;
+  font-size: 24px;
+  background: none;
+  box-shadow: none;
+  color: var(--muted);
+}
+.modal-close:hover { color: var(--text); filter: none; }
+
 /* ---------- Phones ---------- */
+@media (max-width: 760px) {
+  .hero { grid-template-columns: 1fr; padding-top: 24px; text-align: center; }
+  .hero h1 { font-size: 40px; }
+  .hero .tagline { letter-spacing: 0.06em; }
+  .hero-art { max-width: 240px; grid-row: 1; }
+  .features { grid-template-columns: 1fr 1fr; }
+  /* phones have no hover, so show icons only */
+  .nav-item { width: 52px; }
+  .nav-label { display: none; }
+  .summary-amount { font-size: 38px; }
+}
 @media (max-width: 480px) {
-  main { padding: 16px 12px 48px; }
+  main { padding: 8px 14px 60px; }
+  .features { grid-template-columns: 1fr; }
   form input:not([type='checkbox']), form select { width: 100%; margin-bottom: 8px; }
 }
