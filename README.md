@@ -1,5 +1,7 @@
 # OweWell
 
+![CI](https://github.com/Sun-Hongyi/OweWell/actions/workflows/ci.yml/badge.svg)
+
 Split group expenses and settle up in the **fewest payments possible**.
 
 **Live at [owewell.onrender.com](https://owewell.onrender.com)**. It runs on a free plan, so the first visit after a quiet spell can take up to a minute to wake up.
