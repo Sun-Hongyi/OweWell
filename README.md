@@ -25,6 +25,7 @@ Split group expenses and settle up in the **fewest payments possible**.
 - **Balances** showing who is owed and who owes across many expenses
 - **Settle up** in the fewest payments, with a "Mark as paid" button for each payment
 - **Event-sourced ledger:** expenses, deletions and payments are stored as events and never erased; balances are calculated by replaying the history, so every change has an audit trail
+- **Soft-deleted groups:** any member can delete a group once everyone is settled up, so no debt can disappear; the group is hidden everywhere but its history is kept
 - **Settlement algorithms** behind a `SettlementAlgorithm` interface:
   - `GreedySettlement`: fast; the biggest debtor pays the biggest creditor
   - `OptimalSettlement`: finds the true minimum number of payments using bitmask dynamic programming, O(n·2ⁿ)
@@ -35,7 +36,7 @@ Split group expenses and settle up in the **fewest payments possible**.
 - **Members-only access:** only members can view or change a group (403 Forbidden otherwise)
 - **Security:** session cookies with CSRF protection (double-submit cookie pattern), and actions that change data are never triggered just by opening a page
 - **Sessions stored in Postgres** with Spring Session JDBC, so redeploys and restarts don't sign anyone out; sign-ins last 14 days
-- **React frontend** that works on phones and laptops, with a public landing page and privacy policy
+- **React frontend** that works on phones and laptops: a balance summary card, an add-expense pop-up, an icon nav, a public landing page and a privacy policy
 
 ## Architecture
 Clean (hexagonal) architecture in a single Spring Boot application:
@@ -141,4 +142,6 @@ Integration tests use Testcontainers, so Docker must be running. No Google crede
 - [x] Deployment: Docker image on Render, Neon Postgres
 - [x] Sessions stored in Postgres, so restarts don't sign people out
 - [x] Public landing page and privacy policy
+- [x] Frontend redesign based on feedback from early users
+- [x] Delete settled groups (soft delete)
 - [ ] Frontend tests
