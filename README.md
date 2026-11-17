@@ -32,7 +32,8 @@ Split group expenses and settle up in the **fewest payments possible**.
 - **Optimistic locking:** each group remembers the version it was loaded at, and a primary key on `(group_id, sequence)` rejects stale saves, so two simultaneous edits can't silently lose data (returned as 409 Conflict)
 - **Members-only access:** only members can view or change a group (403 Forbidden otherwise)
 - **Security:** session cookies with CSRF protection (double-submit cookie pattern), and actions that change data are never triggered just by opening a page
-- **React frontend** that works on phones and laptops
+- **Sessions stored in Postgres** with Spring Session JDBC, so redeploys and restarts don't sign anyone out; sign-ins last 14 days
+- **React frontend** that works on phones and laptops, with a public landing page and privacy policy
 
 ## Architecture
 Clean (hexagonal) architecture in a single Spring Boot application:
@@ -76,7 +77,7 @@ Greedy is near-optimal for small groups, but the gap grows with group size. Opti
 To reproduce, run `SettlementBenchmark` in `src/test/java/owewell/domain/`.
 
 ## Tech
-**Backend:** Java 25 · Spring Boot 4 · Spring Security · OAuth2 · PostgreSQL · Flyway · Docker · Gradle
+**Backend:** Java 25 · Spring Boot 4 · Spring Security · OAuth2 · Spring Session · PostgreSQL · Flyway · Docker · Gradle
 
 **Frontend:** React · TypeScript · Vite · React Router
 
@@ -136,5 +137,6 @@ Integration tests use Testcontainers, so Docker must be running. No Google crede
 - [x] Invite links
 - [x] React frontend: groups, invites, expenses (all four split types), balances, settle up
 - [x] Deployment: Docker image on Render, Neon Postgres
-- [ ] Sessions stored in Postgres, so restarts don't sign people out
+- [x] Sessions stored in Postgres, so restarts don't sign people out
+- [x] Public landing page and privacy policy
 - [ ] Frontend tests
